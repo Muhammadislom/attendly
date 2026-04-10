@@ -3,7 +3,9 @@ import 'dotenv/config';
 function required(name: string): string {
   const v = process.env[name];
   if (!v) throw new Error(`Missing env var: ${name}`);
-  return v;
+  // Trim whitespace — Railway Raw Editor sometimes keeps trailing newlines
+  // and stray spaces, which silently break HMAC/connection strings.
+  return v.trim();
 }
 
 function parseBigIntSafe(raw: string | undefined): bigint {

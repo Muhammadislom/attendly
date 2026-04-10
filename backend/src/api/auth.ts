@@ -33,10 +33,16 @@ export function verifyInitData(initData: string): Record<string, string> | null 
     .digest('hex');
 
   if (computed !== hash) {
+    // Show what we actually hashed and which token length we used so we can
+    // tell "wrong token" from "wrong data-check-string" without leaking secrets.
     console.warn('[initData] HMAC mismatch', {
       expected: hash,
       computed,
       keys: [...urlParams.keys()],
+      dataCheckString,
+      botTokenLen: config.botToken.length,
+      botTokenHead: config.botToken.slice(0, 4),
+      botTokenTail: config.botToken.slice(-4),
     });
     return null;
   }
