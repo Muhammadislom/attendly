@@ -99,6 +99,27 @@ bot.on('text', async (ctx, next) => {
 });
 
 export async function startBot() {
+  // Set the default chat menu button to a Web App button so every user gets
+  // an always-visible "Open" button next to the chat input that launches the
+  // WebApp WITH proper initData. This is the most reliable entry point — it
+  // doesn't depend on the user tapping the right reply-keyboard button, and
+  // it overrides any stale BotFather "menu button" configuration that might
+  // have been set up without web_app metadata.
+  if (config.webappUrl) {
+    try {
+      await bot.telegram.setChatMenuButton({
+        menuButton: {
+          type: 'web_app',
+          text: 'Открыть',
+          web_app: { url: config.webappUrl },
+        },
+      });
+      console.log('📱 Chat menu button set to WebApp:', config.webappUrl);
+    } catch (err: any) {
+      console.warn('⚠️ Failed to set chat menu button:', err?.message || err);
+    }
+  }
+
   // launch() never resolves while polling is running. We intentionally do NOT
   // await it so the rest of the server can boot. But we MUST attach a catch
   // handler — otherwise a Telegram API error (e.g. 409 Conflict during a
