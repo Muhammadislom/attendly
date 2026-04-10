@@ -52,8 +52,11 @@ export async function registerRoutes(app: FastifyInstance) {
     { preHandler: requireRole(Role.SUPER_ADMIN) },
     async (req, reply) => {
       const params = z.object({ id: z.string() }).parse(req.params);
+      // Super admin only toggles MANAGER status. Assistant/Staff roles are
+      // assigned automatically (manager adds an assistant -> ASSISTANT;
+      // staff enters invite code -> STAFF).
       const body = z
-        .object({ role: z.enum(['MANAGER', 'STAFF', 'NONE']) })
+        .object({ role: z.enum(['MANAGER', 'NONE']) })
         .parse(req.body);
       const id = Number(params.id);
       const updated = await prisma.user.update({
@@ -67,7 +70,7 @@ export async function registerRoutes(app: FastifyInstance) {
   // ---------- Manager ----------
   app.get(
     '/api/manager/orgs',
-    { preHandler: requireRole(Role.MANAGER, Role.SUPER_ADMIN) },
+    { preHandler: requireRole(Role.MANAGER) },
     async (req) => {
       const orgs = await prisma.organization.findMany({
         where: { managerId: req.user!.id },
@@ -80,7 +83,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
   app.post(
     '/api/manager/orgs',
-    { preHandler: requireRole(Role.MANAGER, Role.SUPER_ADMIN) },
+    { preHandler: requireRole(Role.MANAGER) },
     async (req) => {
       const body = z
         .object({
@@ -101,7 +104,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
   app.get(
     '/api/manager/orgs/:id',
-    { preHandler: requireRole(Role.MANAGER, Role.SUPER_ADMIN) },
+    { preHandler: requireRole(Role.MANAGER) },
     async (req, reply) => {
       const { id } = z.object({ id: z.string() }).parse(req.params);
       const org = await prisma.organization.findFirst({
@@ -118,7 +121,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
   app.put(
     '/api/manager/orgs/:id',
-    { preHandler: requireRole(Role.MANAGER, Role.SUPER_ADMIN) },
+    { preHandler: requireRole(Role.MANAGER) },
     async (req, reply) => {
       const { id } = z.object({ id: z.string() }).parse(req.params);
       const body = z
@@ -145,7 +148,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
   app.delete(
     '/api/manager/orgs/:id',
-    { preHandler: requireRole(Role.MANAGER, Role.SUPER_ADMIN) },
+    { preHandler: requireRole(Role.MANAGER) },
     async (req, reply) => {
       const { id } = z.object({ id: z.string() }).parse(req.params);
       const org = await prisma.organization.findFirst({
@@ -160,7 +163,7 @@ export async function registerRoutes(app: FastifyInstance) {
   // Add staff (no telegram link required)
   app.post(
     '/api/manager/orgs/:id/staff',
-    { preHandler: requireRole(Role.MANAGER, Role.SUPER_ADMIN) },
+    { preHandler: requireRole(Role.MANAGER) },
     async (req, reply) => {
       const { id } = z.object({ id: z.string() }).parse(req.params);
       const body = z
@@ -193,7 +196,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
   app.post(
     '/api/manager/staff/:staffId/invite',
-    { preHandler: requireRole(Role.MANAGER, Role.SUPER_ADMIN) },
+    { preHandler: requireRole(Role.MANAGER) },
     async (req, reply) => {
       const { staffId } = z.object({ staffId: z.string() }).parse(req.params);
       const staff = await prisma.staff.findUnique({
@@ -213,7 +216,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
   app.delete(
     '/api/manager/staff/:staffId',
-    { preHandler: requireRole(Role.MANAGER, Role.SUPER_ADMIN) },
+    { preHandler: requireRole(Role.MANAGER) },
     async (req, reply) => {
       const { staffId } = z.object({ staffId: z.string() }).parse(req.params);
       const staff = await prisma.staff.findUnique({
@@ -230,7 +233,7 @@ export async function registerRoutes(app: FastifyInstance) {
   // Add assistant by telegram id (user must have started the bot first)
   app.post(
     '/api/manager/orgs/:id/assistants',
-    { preHandler: requireRole(Role.MANAGER, Role.SUPER_ADMIN) },
+    { preHandler: requireRole(Role.MANAGER) },
     async (req, reply) => {
       const { id } = z.object({ id: z.string() }).parse(req.params);
       const body = z.object({ telegramId: z.string() }).parse(req.body);
@@ -265,7 +268,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
   app.delete(
     '/api/manager/assistants/:id',
-    { preHandler: requireRole(Role.MANAGER, Role.SUPER_ADMIN) },
+    { preHandler: requireRole(Role.MANAGER) },
     async (req, reply) => {
       const { id } = z.object({ id: z.string() }).parse(req.params);
       const asst = await prisma.assistant.findUnique({
@@ -282,7 +285,7 @@ export async function registerRoutes(app: FastifyInstance) {
   // ---------- Assistant ----------
   app.get(
     '/api/assistant/orgs',
-    { preHandler: requireRole(Role.ASSISTANT, Role.SUPER_ADMIN) },
+    { preHandler: requireRole(Role.ASSISTANT) },
     async (req) => {
       const assistants = await prisma.assistant.findMany({
         where: { userId: req.user!.id },
@@ -294,7 +297,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
   app.get(
     '/api/assistant/orgs/:id/today',
-    { preHandler: requireRole(Role.ASSISTANT, Role.SUPER_ADMIN) },
+    { preHandler: requireRole(Role.ASSISTANT) },
     async (req, reply) => {
       const { id } = z.object({ id: z.string() }).parse(req.params);
       const orgId = Number(id);
@@ -302,7 +305,7 @@ export async function registerRoutes(app: FastifyInstance) {
         where: { organizationId: orgId, userId: req.user!.id },
       });
       const org = await prisma.organization.findUnique({ where: { id: orgId } });
-      if (!org || (!check && req.user!.role !== Role.SUPER_ADMIN))
+      if (!org || !check)
         return reply.code(403).send({ error: 'Forbidden' });
       const date = todayIso(org.timezone);
       const staff = await prisma.staff.findMany({
@@ -342,7 +345,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
   app.post(
     '/api/assistant/orgs/:id/mark',
-    { preHandler: requireRole(Role.ASSISTANT, Role.SUPER_ADMIN) },
+    { preHandler: requireRole(Role.ASSISTANT) },
     async (req, reply) => {
       const { id } = z.object({ id: z.string() }).parse(req.params);
       const body = z
@@ -356,7 +359,7 @@ export async function registerRoutes(app: FastifyInstance) {
         where: { organizationId: orgId, userId: req.user!.id },
       });
       const org = await prisma.organization.findUnique({ where: { id: orgId } });
-      if (!org || (!check && req.user!.role !== Role.SUPER_ADMIN))
+      if (!org || !check)
         return reply.code(403).send({ error: 'Forbidden' });
       const now = DateTime.now().setZone(org.timezone);
       const end = now.set({
@@ -401,7 +404,7 @@ export async function registerRoutes(app: FastifyInstance) {
   // ---------- Reports (for manager) ----------
   app.get(
     '/api/manager/orgs/:id/report',
-    { preHandler: requireRole(Role.MANAGER, Role.SUPER_ADMIN) },
+    { preHandler: requireRole(Role.MANAGER) },
     async (req, reply) => {
       const { id } = z.object({ id: z.string() }).parse(req.params);
       const query = z

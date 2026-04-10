@@ -8,6 +8,9 @@ type MenuItem = { to: string; title: string; subtitle: string; icon: string };
 export default function Home({ me, reload }: { me: Me; reload: () => void }) {
   const items: MenuItem[] = [];
 
+  // Super admin ONLY manages users (assigns/revokes managers). They do not
+  // create organizations or mark attendance — those are manager/assistant
+  // responsibilities per business logic.
   if (me.user.role === 'SUPER_ADMIN') {
     items.push({
       to: '/admin/users',
@@ -16,7 +19,7 @@ export default function Home({ me, reload }: { me: Me; reload: () => void }) {
       icon: '👑',
     });
   }
-  if (me.user.role === 'SUPER_ADMIN' || me.user.role === 'MANAGER' || me.managedOrgs.length > 0) {
+  if (me.user.role === 'MANAGER' || me.managedOrgs.length > 0) {
     items.push({
       to: '/manager',
       title: 'Мои организации',
@@ -24,7 +27,7 @@ export default function Home({ me, reload }: { me: Me; reload: () => void }) {
       icon: '🏢',
     });
   }
-  if (me.user.role === 'ASSISTANT' || me.assistantOf.length > 0 || me.user.role === 'SUPER_ADMIN') {
+  if (me.user.role === 'ASSISTANT' || me.assistantOf.length > 0) {
     items.push({
       to: '/assistant',
       title: 'Отметить посещение',

@@ -47,8 +47,9 @@ export default function ManagerOrgs({ me }: { me: Me }) {
       </Layout>
     );
 
-  const canManage =
-    me.user.role === 'MANAGER' || me.user.role === 'SUPER_ADMIN';
+  // Only managers create/edit organizations. Super admin is excluded by
+  // design — they manage users, not organizations.
+  const canManage = me.user.role === 'MANAGER';
 
   const submit = async () => {
     if (!name.trim()) return showAlert('Введите название');

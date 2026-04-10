@@ -45,7 +45,7 @@ export default function AdminUsers({ me }: { me: Me }) {
       </Layout>
     );
 
-  const setRole = async (id: number, role: 'MANAGER' | 'STAFF' | 'NONE') => {
+  const setRole = async (id: number, role: 'MANAGER' | 'NONE') => {
     setSaving(id);
     haptic('medium');
     try {
