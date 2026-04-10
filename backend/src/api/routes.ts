@@ -230,24 +230,39 @@ export async function registerRoutes(app: FastifyInstance) {
     },
   );
 
-  // Add assistant by telegram id (user must have started the bot first)
+  // Add assistant by @username or numeric telegram id. User must have run
+  // /start in the bot at least once so we have them in our DB.
   app.post(
     '/api/manager/orgs/:id/assistants',
     { preHandler: requireRole(Role.MANAGER) },
     async (req, reply) => {
       const { id } = z.object({ id: z.string() }).parse(req.params);
-      const body = z.object({ telegramId: z.string() }).parse(req.body);
+      const body = z
+        .object({ identifier: z.string().min(1) })
+        .parse(req.body);
       const org = await prisma.organization.findFirst({
         where: { id: Number(id), managerId: req.user!.id },
       });
       if (!org) return reply.code(404).send({ error: 'Not found' });
-      const user = await prisma.user.findUnique({
-        where: { telegramId: BigInt(body.telegramId) },
-      });
+
+      // Accept "@username", "username", or numeric telegram id
+      const raw = body.identifier.trim().replace(/^@/, '');
+      let user = null;
+      if (/^\d+$/.test(raw)) {
+        user = await prisma.user.findUnique({
+          where: { telegramId: BigInt(raw) },
+        });
+      } else {
+        user = await prisma.user.findFirst({
+          where: { username: { equals: raw, mode: 'insensitive' } },
+        });
+      }
       if (!user)
         return reply.code(404).send({
-          error: 'Пользователь не найден. Попросите его сначала запустить бота командой /start.',
+          error:
+            'Пользователь не найден. Попросите его открыть бота и нажать /start, затем повторите.',
         });
+
       const assistant = await prisma.assistant.upsert({
         where: {
           organizationId_userId: { organizationId: org.id, userId: user.id },

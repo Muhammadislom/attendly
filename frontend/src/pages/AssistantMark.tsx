@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api, Me } from '../lib/api';
 import Layout from '../components/Layout';
-import { Card } from '../components/Card';
+import { Card, Help } from '../components/Card';
 import Spinner from '../components/Spinner';
 import { haptic, notify, showAlert } from '../lib/telegram';
 
@@ -89,6 +89,21 @@ export default function AssistantMark({ me }: { me: Me }) {
 
   return (
     <Layout title={data.org.name} back>
+      <Help title="Как отмечать">
+        <p>
+          Напротив каждого сотрудника — три кнопки:
+        </p>
+        <p>
+          ✅ <b>Пришёл</b> — сотрудник на месте вовремя.
+          <br />🟡 <b>Опоздал</b> — пришёл, но с опозданием.
+          <br />❌ <b>Отсутствует</b> — не пришёл.
+        </p>
+        <p>
+          Нажмите нужную кнопку — отметка сохранится автоматически. Можно
+          менять сколько угодно раз, пока окно открыто. После закрытия окна
+          управляющий получит итоговый отчёт.
+        </p>
+      </Help>
       <Card className="mb-3">
         <div className="flex items-center justify-between mb-2">
           <div>

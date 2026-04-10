@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, Me, Role } from '../lib/api';
 import Layout from '../components/Layout';
-import { Card } from '../components/Card';
+import { Card, Help } from '../components/Card';
 import Spinner from '../components/Spinner';
 import { notify, showAlert, haptic } from '../lib/telegram';
 
@@ -78,11 +78,39 @@ export default function AdminUsers({ me }: { me: Me }) {
 
   return (
     <Layout title="Пользователи" back>
+      <Help title="Кто такие роли в системе?">
+        <p>
+          <b>SUPER_ADMIN</b> — только вы. Управляете ролями: назначаете
+          управляющих. Не создаёте организации.
+        </p>
+        <p>
+          <b>MANAGER (Управляющий)</b> — создаёт организации, добавляет
+          сотрудников и ассистентов, получает отчёты.
+        </p>
+        <p>
+          <b>ASSISTANT (Ассистент)</b> — отмечает посещаемость сотрудников в
+          окне отметки. Назначается автоматически, когда управляющий его
+          добавил.
+        </p>
+        <p>
+          <b>STAFF (Сотрудник)</b> — может только смотреть свою историю
+          посещений. Назначается автоматически, когда сотрудник ввёл код
+          привязки в боте.
+        </p>
+        <p>
+          <b>NONE</b> — обычный пользователь без особых прав. Присваивается
+          всем новым юзерам после /start.
+        </p>
+        <p className="text-tg-hint">
+          Нажмите «Управляющий», чтобы назначить пользователя управляющим —
+          после этого он сможет создавать организации.
+        </p>
+      </Help>
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Поиск..."
-        className="w-full rounded-2xl px-4 py-3 bg-tg-secondary outline-none mb-3"
+        placeholder="Поиск по имени, @username или ID..."
+        className="w-full rounded-2xl px-4 py-3 bg-tg-bg text-tg-text placeholder:text-tg-hint/60 ring-1 ring-white/10 outline-none focus:ring-2 focus:ring-tg-button transition mb-3"
       />
       <div className="space-y-2">
         {filtered.map((u) => {

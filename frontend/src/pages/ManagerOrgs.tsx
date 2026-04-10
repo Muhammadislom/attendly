@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, Me } from '../lib/api';
 import Layout from '../components/Layout';
-import { Card, Button, Input } from '../components/Card';
+import { Card, Button, Input, Help } from '../components/Card';
 import Spinner from '../components/Spinner';
 import { notify, showAlert } from '../lib/telegram';
 
@@ -82,6 +82,23 @@ export default function ManagerOrgs({ me }: { me: Me }) {
 
   return (
     <Layout title="Мои организации" back>
+      {canManage && (
+        <Help title="Что такое организация?">
+          <p>
+            Организация — это ваш объект учёта посещаемости (кофейня, магазин,
+            офис). В ней будут:
+          </p>
+          <p>
+            • <b>Сотрудники</b> — те, чью посещаемость отмечают.
+            <br />• <b>Ассистенты</b> — те, кто отмечает посещаемость в
+            приложении.
+            <br />• <b>Окно отметки</b> — промежуток времени, когда можно
+            отмечать. После закрытия окна вам автоматически приходит отчёт в
+            Telegram.
+          </p>
+        </Help>
+      )}
+
       {canManage && !showForm && (
         <Button onClick={() => setShowForm(true)} className="mb-4">
           + Добавить организацию
@@ -96,36 +113,34 @@ export default function ManagerOrgs({ me }: { me: Me }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Кофейня Uptown"
+            hint="Как будет называться объект у вас в списке"
           />
           <div className="grid grid-cols-2 gap-3 mb-2">
             <label className="block">
-              <div className="text-sm text-tg-hint mb-1 px-1">Начало окна</div>
+              <div className="text-sm font-medium mb-1.5 px-1">Начало окна</div>
               <input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full rounded-2xl px-4 py-3 bg-tg-secondary outline-none"
+                className="w-full rounded-2xl px-4 py-3 bg-tg-bg text-tg-text ring-1 ring-white/10 outline-none focus:ring-2 focus:ring-tg-button transition"
               />
             </label>
             <label className="block">
-              <div className="text-sm text-tg-hint mb-1 px-1">Конец окна</div>
+              <div className="text-sm font-medium mb-1.5 px-1">Конец окна</div>
               <input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full rounded-2xl px-4 py-3 bg-tg-secondary outline-none"
+                className="w-full rounded-2xl px-4 py-3 bg-tg-bg text-tg-text ring-1 ring-white/10 outline-none focus:ring-2 focus:ring-tg-button transition"
               />
             </label>
           </div>
-          <div className="text-xs text-tg-hint mb-3">
-            Часовой пояс: Asia/Tashkent. После завершения окна управляющему
-            автоматически отправляется отчёт.
+          <div className="text-xs text-tg-hint mb-3 px-1 leading-snug">
+            Часовой пояс: Asia/Tashkent. После закрытия окна вы получите отчёт
+            в Telegram.
           </div>
           <div className="flex gap-2">
-            <Button
-              onClick={() => setShowForm(false)}
-              variant="secondary"
-            >
+            <Button onClick={() => setShowForm(false)} variant="secondary">
               Отмена
             </Button>
             <Button onClick={submit} disabled={saving}>
@@ -138,7 +153,12 @@ export default function ManagerOrgs({ me }: { me: Me }) {
       {orgs.length === 0 && !showForm && (
         <div className="text-center text-tg-hint mt-10">
           <div className="text-5xl mb-3">🏢</div>
-          У вас пока нет организаций
+          <div>У вас пока нет организаций</div>
+          {canManage && (
+            <div className="text-xs mt-2 px-6">
+              Нажмите «Добавить организацию», чтобы начать
+            </div>
+          )}
         </div>
       )}
 

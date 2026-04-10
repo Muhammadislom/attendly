@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, Me } from '../lib/api';
 import Layout from '../components/Layout';
-import { Card } from '../components/Card';
+import { Card, Help } from '../components/Card';
 import Spinner from '../components/Spinner';
 
 type StaffLink = {
@@ -34,9 +34,25 @@ export default function StaffHistory({ me }: { me: Me }) {
 
   return (
     <Layout title="Мои посещения" back>
+      <Help title="Что я здесь вижу?">
+        <p>
+          Здесь отображается ваша история посещений за последние 60 дней.
+          Ассистент отмечает каждый ваш рабочий день — а вы можете посмотреть
+          статистику.
+        </p>
+        <p>
+          Если список пустой — попросите управляющего выдать вам <b>код
+          привязки</b> и отправьте его боту как сообщение. После этого ваш
+          Telegram будет связан с профилем сотрудника.
+        </p>
+      </Help>
       {data.length === 0 && (
         <div className="text-center text-tg-hint mt-10">
-          Вы не привязаны к профилю сотрудника
+          <div className="text-5xl mb-3">📋</div>
+          <div>Вы не привязаны к профилю сотрудника</div>
+          <div className="text-xs mt-2 px-6">
+            Попросите у управляющего код привязки и отправьте его боту
+          </div>
         </div>
       )}
       {data.map((link) => {
