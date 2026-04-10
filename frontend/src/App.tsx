@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { api, Me } from './lib/api';
-import { tg } from './lib/telegram';
 import Home from './pages/Home';
 import AdminUsers from './pages/AdminUsers';
 import ManagerOrgs from './pages/ManagerOrgs';
@@ -14,28 +13,35 @@ import Spinner from './components/Spinner';
 export default function App() {
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // Detect whether the page is actually running inside Telegram. Outside
-  // Telegram `initData` is empty and any API call will return 401, which
-  // would otherwise show as a confusing "Missing initData" error.
-  const insideTelegram = !!tg()?.initData;
+  const [authFailed, setAuthFailed] = useState(false);
 
   const reload = async () => {
     try {
       setError(null);
+      setAuthFailed(false);
       const data = await api<Me>('/api/me');
       setMe(data);
     } catch (e: any) {
-      setError(e.message || 'Ошибка загрузки');
+      const msg = e.message || 'Ошибка загрузки';
+      // Any auth-related failure (no initData, wrong HMAC, stale, etc.)
+      // shows the friendly "open via Telegram" screen.
+      if (
+        msg.includes('initData') ||
+        msg.includes('Unauthorized') ||
+        msg.includes('HTTP 401')
+      ) {
+        setAuthFailed(true);
+      } else {
+        setError(msg);
+      }
     }
   };
 
   useEffect(() => {
-    if (!insideTelegram) return;
     reload();
-  }, [insideTelegram]);
+  }, []);
 
-  if (!insideTelegram) {
+  if (authFailed) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="max-w-sm text-center space-y-4">
@@ -45,6 +51,12 @@ export default function App() {
             Это мини-приложение работает только внутри Telegram. Откройте бота
             и нажмите кнопку «📱 Открыть приложение» или команду /app.
           </p>
+          <button
+            onClick={reload}
+            className="px-4 py-2 rounded-xl bg-tg-button text-tg-buttonText"
+          >
+            Повторить
+          </button>
         </div>
       </div>
     );
