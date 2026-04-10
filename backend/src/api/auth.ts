@@ -5,6 +5,11 @@ import { prisma } from '../db.js';
 import { Role, User } from '@prisma/client';
 
 // Verify Telegram WebApp initData per https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+//
+// IMPORTANT: the data-check-string must include every field EXCEPT `hash`.
+// In particular, `signature` (Ed25519, added by newer clients) is part of
+// the signed payload and must NOT be stripped — verified empirically against
+// real Telegram initData, see git log for the test.
 export function verifyInitData(initData: string): Record<string, string> | null {
   const urlParams = new URLSearchParams(initData);
   const hash = urlParams.get('hash');
@@ -13,9 +18,6 @@ export function verifyInitData(initData: string): Record<string, string> | null 
     return null;
   }
   urlParams.delete('hash');
-  // Newer Telegram clients include a `signature` field (Ed25519) that is NOT
-  // part of the HMAC data-check-string and must be excluded.
-  urlParams.delete('signature');
 
   const dataCheckString = [...urlParams.entries()]
     .map(([k, v]) => `${k}=${v}`)
@@ -33,8 +35,6 @@ export function verifyInitData(initData: string): Record<string, string> | null 
     .digest('hex');
 
   if (computed !== hash) {
-    // Show what we actually hashed and which token length we used so we can
-    // tell "wrong token" from "wrong data-check-string" without leaking secrets.
     console.warn('[initData] HMAC mismatch', {
       expected: hash,
       computed,
