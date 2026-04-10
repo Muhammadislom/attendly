@@ -4,13 +4,16 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import { initTelegram } from './lib/telegram';
+import { LangProvider } from './lib/i18n';
 
 initTelegram();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <LangProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </LangProvider>
   </React.StrictMode>,
 );

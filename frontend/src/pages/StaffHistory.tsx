@@ -3,6 +3,7 @@ import { api, Me } from '../lib/api';
 import Layout from '../components/Layout';
 import { Card, Help } from '../components/Card';
 import Spinner from '../components/Spinner';
+import { useT } from '../lib/i18n';
 
 type StaffLink = {
   id: number;
@@ -16,7 +17,8 @@ type StaffLink = {
   }[];
 };
 
-export default function StaffHistory({ me }: { me: Me }) {
+export default function StaffHistory({ me: _me }: { me: Me }) {
+  const { t } = useT();
   const [data, setData] = useState<StaffLink[] | null>(null);
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export default function StaffHistory({ me }: { me: Me }) {
 
   if (!data)
     return (
-      <Layout title="Мои посещения" back>
+      <Layout title={t('staffHistory.title')} back>
         <div className="flex justify-center py-12">
           <Spinner />
         </div>
@@ -33,25 +35,17 @@ export default function StaffHistory({ me }: { me: Me }) {
     );
 
   return (
-    <Layout title="Мои посещения" back>
-      <Help title="Что я здесь вижу?">
-        <p>
-          Здесь отображается ваша история посещений за последние 60 дней.
-          Ассистент отмечает каждый ваш рабочий день — а вы можете посмотреть
-          статистику.
-        </p>
-        <p>
-          Если список пустой — попросите управляющего выдать вам <b>код
-          привязки</b> и отправьте его боту как сообщение. После этого ваш
-          Telegram будет связан с профилем сотрудника.
-        </p>
+    <Layout title={t('staffHistory.title')} back>
+      <Help title={t('staffHistory.help.title')}>
+        <p>{t('staffHistory.help.body1')}</p>
+        <p>{t('staffHistory.help.body2')}</p>
       </Help>
       {data.length === 0 && (
         <div className="text-center text-tg-hint mt-10">
           <div className="text-5xl mb-3">📋</div>
-          <div>Вы не привязаны к профилю сотрудника</div>
+          <div>{t('staffHistory.empty')}</div>
           <div className="text-xs mt-2 px-6">
-            Попросите у управляющего код привязки и отправьте его боту
+            {t('staffHistory.emptyHint')}
           </div>
         </div>
       )}
@@ -71,15 +65,21 @@ export default function StaffHistory({ me }: { me: Me }) {
               <div className="grid grid-cols-3 gap-2 mt-3 text-center">
                 <div className="bg-green-500/10 rounded-xl p-2">
                   <div className="font-bold text-green-500">{present}</div>
-                  <div className="text-xs text-tg-hint">Пришёл</div>
+                  <div className="text-xs text-tg-hint">
+                    {t('staffHistory.present')}
+                  </div>
                 </div>
                 <div className="bg-yellow-500/10 rounded-xl p-2">
                   <div className="font-bold text-yellow-500">{late}</div>
-                  <div className="text-xs text-tg-hint">Опоздал</div>
+                  <div className="text-xs text-tg-hint">
+                    {t('staffHistory.late')}
+                  </div>
                 </div>
                 <div className="bg-red-500/10 rounded-xl p-2">
                   <div className="font-bold text-red-500">{absent}</div>
-                  <div className="text-xs text-tg-hint">Отсутств.</div>
+                  <div className="text-xs text-tg-hint">
+                    {t('report.absent')}
+                  </div>
                 </div>
               </div>
             </Card>
@@ -89,16 +89,22 @@ export default function StaffHistory({ me }: { me: Me }) {
                   <div className="flex items-center justify-between">
                     <div className="text-sm">{a.date}</div>
                     <div>
-                      {a.status === 'PRESENT' && <span>✅ Пришёл</span>}
-                      {a.status === 'LATE' && <span>🟡 Опоздал</span>}
-                      {a.status === 'ABSENT' && <span>❌ Отсутствовал</span>}
+                      {a.status === 'PRESENT' && (
+                        <span>✅ {t('staffHistory.present')}</span>
+                      )}
+                      {a.status === 'LATE' && (
+                        <span>🟡 {t('staffHistory.late')}</span>
+                      )}
+                      {a.status === 'ABSENT' && (
+                        <span>❌ {t('staffHistory.absent')}</span>
+                      )}
                     </div>
                   </div>
                 </Card>
               ))}
               {link.attendance.length === 0 && (
                 <div className="text-center text-tg-hint text-sm">
-                  Записей пока нет
+                  {t('staffHistory.noRecords')}
                 </div>
               )}
             </div>

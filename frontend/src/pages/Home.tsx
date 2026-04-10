@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom';
 import { Me } from '../lib/api';
 import Layout from '../components/Layout';
 import { Card } from '../components/Card';
+import { useT } from '../lib/i18n';
 
 type MenuItem = { to: string; title: string; subtitle: string; icon: string };
 
 export default function Home({ me, reload }: { me: Me; reload: () => void }) {
+  const { t } = useT();
   const items: MenuItem[] = [];
 
   // Super admin ONLY manages users (assigns/revokes managers). They do not
@@ -14,50 +16,43 @@ export default function Home({ me, reload }: { me: Me; reload: () => void }) {
   if (me.user.role === 'SUPER_ADMIN') {
     items.push({
       to: '/admin/users',
-      title: 'Пользователи',
-      subtitle: 'Все пользователи бота и назначение управляющих',
+      title: t('home.menu.users'),
+      subtitle: t('home.menu.usersSub'),
       icon: '👑',
     });
   }
   if (me.user.role === 'MANAGER' || me.managedOrgs.length > 0) {
     items.push({
       to: '/manager',
-      title: 'Мои организации',
-      subtitle: 'Управление сотрудниками, ассистентами и отчётами',
+      title: t('home.menu.orgs'),
+      subtitle: t('home.menu.orgsSub'),
       icon: '🏢',
     });
   }
   if (me.user.role === 'ASSISTANT' || me.assistantOf.length > 0) {
     items.push({
       to: '/assistant',
-      title: 'Отметить посещение',
-      subtitle: 'Отметьте кто пришёл сегодня',
+      title: t('home.menu.mark'),
+      subtitle: t('home.menu.markSub'),
       icon: '✅',
     });
   }
   if (me.staffLinks.length > 0) {
     items.push({
       to: '/staff',
-      title: 'Мои посещения',
-      subtitle: 'История моих посещений',
+      title: t('home.menu.history'),
+      subtitle: t('home.menu.historySub'),
       icon: '📋',
     });
   }
 
-  const greeting = me.user.firstName ? `Привет, ${me.user.firstName}!` : 'Привет!';
-  const roleLabel =
-    me.user.role === 'SUPER_ADMIN'
-      ? 'Супер-админ'
-      : me.user.role === 'MANAGER'
-      ? 'Управляющий'
-      : me.user.role === 'ASSISTANT'
-      ? 'Ассистент'
-      : me.user.role === 'STAFF'
-      ? 'Сотрудник'
-      : 'Нет роли';
+  const greeting = me.user.firstName
+    ? t('home.greeting', me.user.firstName)
+    : t('home.greetingAnon');
+  const roleLabel = t(`role.${me.user.role}` as any);
 
   return (
-    <Layout title="Главная">
+    <Layout title={t('home.title')}>
       <div className="mb-6">
         <div className="text-2xl font-bold">{greeting}</div>
         <div className="text-tg-hint text-sm mt-1">{roleLabel}</div>
@@ -67,15 +62,15 @@ export default function Home({ me, reload }: { me: Me; reload: () => void }) {
         <Card>
           <div className="text-center py-6">
             <div className="text-4xl mb-3">⏳</div>
-            <div className="font-semibold">Ожидание назначения</div>
+            <div className="font-semibold">{t('home.waiting')}</div>
             <div className="text-tg-hint text-sm mt-2">
-              Свяжитесь с вашим управляющим или супер-админом чтобы получить доступ.
+              {t('home.waitingHint')}
             </div>
             <button
               onClick={reload}
               className="mt-4 px-4 py-2 rounded-xl bg-tg-button text-tg-buttonText text-sm"
             >
-              Обновить
+              {t('common.refresh')}
             </button>
           </div>
         </Card>

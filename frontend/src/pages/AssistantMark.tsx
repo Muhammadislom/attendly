@@ -5,6 +5,7 @@ import Layout from '../components/Layout';
 import { Card, Help } from '../components/Card';
 import Spinner from '../components/Spinner';
 import { haptic, notify, showAlert } from '../lib/telegram';
+import { useT } from '../lib/i18n';
 
 type Status = 'PRESENT' | 'LATE' | 'ABSENT' | null;
 
@@ -25,7 +26,8 @@ type Data = {
   staff: StaffRow[];
 };
 
-export default function AssistantMark({ me }: { me: Me }) {
+export default function AssistantMark({ me: _me }: { me: Me }) {
+  const { t, lang } = useT();
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<Data | null>(null);
   const [pending, setPending] = useState<number | null>(null);
@@ -41,14 +43,17 @@ export default function AssistantMark({ me }: { me: Me }) {
 
   if (!data)
     return (
-      <Layout title="Отметка" back>
+      <Layout title={t('assistantPick.title')} back>
         <div className="flex justify-center py-12">
           <Spinner />
         </div>
       </Layout>
     );
 
-  const mark = async (staffId: number, status: 'PRESENT' | 'LATE' | 'ABSENT') => {
+  const mark = async (
+    staffId: number,
+    status: 'PRESENT' | 'LATE' | 'ABSENT',
+  ) => {
     haptic('light');
     setPending(staffId);
     // Optimistic
@@ -78,7 +83,7 @@ export default function AssistantMark({ me }: { me: Me }) {
   };
 
   const formatTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString('ru-RU', {
+    new Date(iso).toLocaleTimeString(lang === 'uz' ? 'uz-UZ' : 'ru-RU', {
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -89,37 +94,31 @@ export default function AssistantMark({ me }: { me: Me }) {
 
   return (
     <Layout title={data.org.name} back>
-      <Help title="Как отмечать">
-        <p>
-          Напротив каждого сотрудника — три кнопки:
-        </p>
-        <p>
-          ✅ <b>Пришёл</b> — сотрудник на месте вовремя.
-          <br />🟡 <b>Опоздал</b> — пришёл, но с опозданием.
-          <br />❌ <b>Отсутствует</b> — не пришёл.
-        </p>
-        <p>
-          Нажмите нужную кнопку — отметка сохранится автоматически. Можно
-          менять сколько угодно раз, пока окно открыто. После закрытия окна
-          управляющий получит итоговый отчёт.
-        </p>
+      <Help title={t('mark.help.title')}>
+        <p>{t('mark.help.body1')}</p>
+        <p className="whitespace-pre-line">{t('mark.help.body2')}</p>
+        <p>{t('mark.help.body3')}</p>
       </Help>
       <Card className="mb-3">
         <div className="flex items-center justify-between mb-2">
           <div>
             <div className="text-sm text-tg-hint">📅 {data.date}</div>
             <div className="text-xs text-tg-hint">
-              Окно: {formatTime(data.windowStart)} — {formatTime(data.windowEnd)}
+              {t(
+                'mark.window',
+                formatTime(data.windowStart),
+                formatTime(data.windowEnd),
+              )}
             </div>
           </div>
           <div>
             {data.isOpen ? (
               <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                Открыто
+                {t('mark.open')}
               </span>
             ) : (
               <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                Закрыто
+                {t('mark.closed')}
               </span>
             )}
           </div>
@@ -127,23 +126,22 @@ export default function AssistantMark({ me }: { me: Me }) {
         <div className="grid grid-cols-3 gap-2 text-center text-xs">
           <div>
             <div className="font-bold text-lg text-green-500">{present}</div>
-            <div className="text-tg-hint">Пришли</div>
+            <div className="text-tg-hint">{t('mark.presentShort')}</div>
           </div>
           <div>
             <div className="font-bold text-lg text-yellow-500">{late}</div>
-            <div className="text-tg-hint">Опоздали</div>
+            <div className="text-tg-hint">{t('mark.lateShort')}</div>
           </div>
           <div>
             <div className="font-bold text-lg text-tg-hint">{unmarked}</div>
-            <div className="text-tg-hint">Не отмечены</div>
+            <div className="text-tg-hint">{t('mark.notMarked')}</div>
           </div>
         </div>
       </Card>
 
       {!data.isOpen && (
         <div className="text-xs text-center text-tg-hint mb-3">
-          Окно отметки закрыто. Отметки нельзя изменить — отчёт отправлен
-          управляющему.
+          {t('mark.closedBanner')}
         </div>
       )}
 
@@ -162,7 +160,8 @@ export default function AssistantMark({ me }: { me: Me }) {
               <div className="flex gap-1">
                 {(['PRESENT', 'LATE', 'ABSENT'] as const).map((st) => {
                   const active = s.status === st;
-                  const icon = st === 'PRESENT' ? '✅' : st === 'LATE' ? '🟡' : '❌';
+                  const icon =
+                    st === 'PRESENT' ? '✅' : st === 'LATE' ? '🟡' : '❌';
                   const bg =
                     st === 'PRESENT'
                       ? 'bg-green-500'

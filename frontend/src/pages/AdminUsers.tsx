@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import { Card, Help } from '../components/Card';
 import Spinner from '../components/Spinner';
 import { notify, showAlert, haptic } from '../lib/telegram';
+import { useT } from '../lib/i18n';
 
 type U = {
   id: number;
@@ -15,6 +16,7 @@ type U = {
 };
 
 export default function AdminUsers({ me }: { me: Me }) {
+  const { t } = useT();
   const [users, setUsers] = useState<U[] | null>(null);
   const [query, setQuery] = useState('');
   const [saving, setSaving] = useState<number | null>(null);
@@ -30,15 +32,15 @@ export default function AdminUsers({ me }: { me: Me }) {
 
   if (me.user.role !== 'SUPER_ADMIN') {
     return (
-      <Layout title="Доступ запрещён" back>
-        <div className="text-center text-tg-hint">Только для супер-админа</div>
+      <Layout title={t('admin.denied')} back>
+        <div className="text-center text-tg-hint">{t('admin.deniedHint')}</div>
       </Layout>
     );
   }
 
   if (!users)
     return (
-      <Layout title="Пользователи" back>
+      <Layout title={t('admin.title')} back>
         <div className="flex justify-center py-12">
           <Spinner />
         </div>
@@ -77,39 +79,19 @@ export default function AdminUsers({ me }: { me: Me }) {
   });
 
   return (
-    <Layout title="Пользователи" back>
-      <Help title="Кто такие роли в системе?">
-        <p>
-          <b>SUPER_ADMIN</b> — только вы. Управляете ролями: назначаете
-          управляющих. Не создаёте организации.
-        </p>
-        <p>
-          <b>MANAGER (Управляющий)</b> — создаёт организации, добавляет
-          сотрудников и ассистентов, получает отчёты.
-        </p>
-        <p>
-          <b>ASSISTANT (Ассистент)</b> — отмечает посещаемость сотрудников в
-          окне отметки. Назначается автоматически, когда управляющий его
-          добавил.
-        </p>
-        <p>
-          <b>STAFF (Сотрудник)</b> — может только смотреть свою историю
-          посещений. Назначается автоматически, когда сотрудник ввёл код
-          привязки в боте.
-        </p>
-        <p>
-          <b>NONE</b> — обычный пользователь без особых прав. Присваивается
-          всем новым юзерам после /start.
-        </p>
-        <p className="text-tg-hint">
-          Нажмите «Управляющий», чтобы назначить пользователя управляющим —
-          после этого он сможет создавать организации.
-        </p>
+    <Layout title={t('admin.title')} back>
+      <Help title={t('admin.help.title')}>
+        <p>{t('admin.help.superAdmin')}</p>
+        <p>{t('admin.help.manager')}</p>
+        <p>{t('admin.help.assistant')}</p>
+        <p>{t('admin.help.staff')}</p>
+        <p>{t('admin.help.none')}</p>
+        <p className="text-tg-hint">{t('admin.help.action')}</p>
       </Help>
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Поиск по имени, @username или ID..."
+        placeholder={t('admin.search')}
         className="w-full rounded-2xl px-4 py-3 bg-tg-bg text-tg-text placeholder:text-tg-hint/60 ring-1 ring-white/10 outline-none focus:ring-2 focus:ring-tg-button transition mb-3"
       />
       <div className="space-y-2">
@@ -120,7 +102,9 @@ export default function AdminUsers({ me }: { me: Me }) {
             <Card key={u.id}>
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <div className="font-semibold truncate">{name || 'Без имени'}</div>
+                  <div className="font-semibold truncate">
+                    {name || t('admin.noName')}
+                  </div>
                   <div className="text-xs text-tg-hint truncate">
                     {u.username ? `@${u.username}` : `id ${u.telegramId}`}
                   </div>
@@ -152,7 +136,9 @@ export default function AdminUsers({ me }: { me: Me }) {
                         : 'bg-tg-button text-tg-buttonText'
                     }`}
                   >
-                    {isManager ? 'Снять' : 'Управляющий'}
+                    {isManager
+                      ? t('admin.removeManager')
+                      : t('admin.makeManager')}
                   </button>
                 )}
               </div>

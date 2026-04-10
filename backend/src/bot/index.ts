@@ -2,6 +2,7 @@ import { Telegraf, Markup } from 'telegraf';
 import { config } from '../config.js';
 import { prisma } from '../db.js';
 import { Role } from '@prisma/client';
+import { pickLang, t } from './i18n.js';
 
 export const bot = new Telegraf(config.botToken);
 
@@ -31,59 +32,61 @@ async function upsertUser(ctx: any) {
 bot.start(async (ctx) => {
   const user = await upsertUser(ctx);
   if (!user) return;
+  const lang = pickLang(ctx.from?.language_code);
 
   const greeting =
     user.role === Role.SUPER_ADMIN
-      ? 'Добро пожаловать, супер-админ!\n\nОткройте приложение для управления пользователями и назначения управляющих.'
+      ? t(lang, 'start.superAdmin')
       : user.role === Role.MANAGER
-      ? 'Добро пожаловать, управляющий!\n\nОткройте приложение для управления организациями, сотрудниками и ассистентами.'
+      ? t(lang, 'start.manager')
       : user.role === Role.ASSISTANT
-      ? 'Добро пожаловать, ассистент!\n\nОткройте приложение чтобы отметить посещаемость сегодня.'
+      ? t(lang, 'start.assistant')
       : user.role === Role.STAFF
-      ? 'Добро пожаловать!\n\nОткройте приложение чтобы посмотреть свои посещения.'
-      : 'Привет! Вы зарегистрированы. Если управляющий добавит вас в организацию — откройте приложение.';
+      ? t(lang, 'start.staff')
+      : t(lang, 'start.none');
 
   if (config.webappUrl) {
     await ctx.reply(
       greeting,
       Markup.keyboard([
-        [Markup.button.webApp('📱 Открыть приложение', config.webappUrl)],
+        [Markup.button.webApp(t(lang, 'btn.openApp'), config.webappUrl)],
       ]).resize(),
     );
   } else {
-    await ctx.reply(
-      greeting + '\n\n⚠️ WebApp ещё не настроен администратором.',
-    );
+    await ctx.reply(greeting + t(lang, 'start.webappNotSet'));
   }
 });
 
 bot.command('app', async (ctx) => {
+  const lang = pickLang(ctx.from?.language_code);
   if (!config.webappUrl) {
-    return ctx.reply('⚠️ WebApp ещё не настроен.');
+    return ctx.reply(t(lang, 'app.webappNotSet'));
   }
   await ctx.reply(
-    'Откройте приложение:',
+    t(lang, 'app.openAppPrompt'),
     Markup.inlineKeyboard([
-      Markup.button.webApp('📱 Открыть', config.webappUrl),
+      Markup.button.webApp(t(lang, 'btn.open'), config.webappUrl),
     ]),
   );
 });
 
 bot.command('id', async (ctx) => {
-  await ctx.reply(`Ваш Telegram ID: \`${ctx.from.id}\``, { parse_mode: 'Markdown' });
+  const lang = pickLang(ctx.from?.language_code);
+  await ctx.reply(t(lang, 'id.yours', ctx.from.id), { parse_mode: 'Markdown' });
 });
 
 // Link a staff profile via invite code sent as plain text
 bot.on('text', async (ctx, next) => {
   const text = ctx.message.text.trim();
   if (!/^link:[a-zA-Z0-9]{6,}$/.test(text)) return next?.();
+  const lang = pickLang(ctx.from?.language_code);
   const code = text.slice(5);
   const staff = await prisma.staff.findUnique({ where: { inviteCode: code } });
   if (!staff) {
-    return ctx.reply('Код не найден или уже использован.');
+    return ctx.reply(t(lang, 'link.notFound'));
   }
   if (staff.userId) {
-    return ctx.reply('Этот профиль уже привязан.');
+    return ctx.reply(t(lang, 'link.alreadyLinked'));
   }
   const user = await upsertUser(ctx);
   if (!user) return;
@@ -93,9 +96,12 @@ bot.on('text', async (ctx, next) => {
   });
   // Make sure role is at least STAFF if not greater
   if (user.role === Role.NONE) {
-    await prisma.user.update({ where: { id: user.id }, data: { role: Role.STAFF } });
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { role: Role.STAFF },
+    });
   }
-  await ctx.reply(`Аккаунт успешно привязан к профилю: ${staff.fullName}`);
+  await ctx.reply(t(lang, 'link.success', staff.fullName));
 });
 
 export async function startBot() {
@@ -107,10 +113,13 @@ export async function startBot() {
   // have been set up without web_app metadata.
   if (config.webappUrl) {
     try {
+      // Use neutral "Open" label (Telegram will show this as-is to every user).
+      // Per-user localization of reply-keyboard/inline buttons still happens
+      // on each message via the i18n helper above.
       await bot.telegram.setChatMenuButton({
         menuButton: {
           type: 'web_app',
-          text: 'Открыть',
+          text: 'Open',
           web_app: { url: config.webappUrl },
         },
       });

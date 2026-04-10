@@ -5,6 +5,7 @@ import Layout from '../components/Layout';
 import { Card, Button, Input, Help } from '../components/Card';
 import Spinner from '../components/Spinner';
 import { notify, showAlert, showConfirm } from '../lib/telegram';
+import { useT } from '../lib/i18n';
 
 type Staff = {
   id: number;
@@ -42,7 +43,8 @@ function pad(n: number) {
   return n.toString().padStart(2, '0');
 }
 
-export default function ManagerOrgDetail({ me }: { me: Me }) {
+export default function ManagerOrgDetail({ me: _me }: { me: Me }) {
+  const { t } = useT();
   const { id } = useParams<{ id: string }>();
   const [org, setOrg] = useState<Org | null>(null);
   const [tab, setTab] = useState<'staff' | 'assistants' | 'settings' | 'report'>(
@@ -67,24 +69,26 @@ export default function ManagerOrgDetail({ me }: { me: Me }) {
       </Layout>
     );
 
+  const windowStart = `${pad(org.markStartHour)}:${pad(org.markStartMin)}`;
+  const windowEnd = `${pad(org.markEndHour)}:${pad(org.markEndMin)}`;
+
   return (
     <Layout title={org.name} back>
       <div className="mb-4 text-sm text-tg-hint">
-        Окно отметки: ⏰ {pad(org.markStartHour)}:{pad(org.markStartMin)} —{' '}
-        {pad(org.markEndHour)}:{pad(org.markEndMin)} ({org.timezone})
+        {t('orgDetail.window', windowStart, windowEnd, org.timezone)}
       </div>
       <div className="flex gap-2 mb-4 overflow-x-auto">
         {(
           [
-            ['staff', '👥 Персонал'],
-            ['assistants', '🧑‍💼 Ассистенты'],
-            ['report', '📊 Отчёт'],
-            ['settings', '⚙️ Настройки'],
+            ['staff', t('orgDetail.tab.staff')],
+            ['assistants', t('orgDetail.tab.assistants')],
+            ['report', t('orgDetail.tab.report')],
+            ['settings', t('orgDetail.tab.settings')],
           ] as const
         ).map(([key, label]) => (
           <button
             key={key}
-            onClick={() => setTab(key)}
+            onClick={() => setTab(key as any)}
             className={`px-4 py-2 rounded-2xl whitespace-nowrap text-sm font-semibold ${
               tab === key
                 ? 'bg-tg-button text-tg-buttonText'
@@ -104,6 +108,7 @@ export default function ManagerOrgDetail({ me }: { me: Me }) {
 }
 
 function StaffTab({ org, reload }: { org: Org; reload: () => Promise<void> }) {
+  const { t } = useT();
   const [showForm, setShowForm] = useState(false);
   const [fullName, setFullName] = useState('');
   const [position, setPosition] = useState('');
@@ -112,7 +117,7 @@ function StaffTab({ org, reload }: { org: Org; reload: () => Promise<void> }) {
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
-    if (!fullName.trim()) return showAlert('Введите ФИО');
+    if (!fullName.trim()) return showAlert(t('staffTab.enterFullName'));
     setSaving(true);
     try {
       await api(`/api/manager/orgs/${org.id}/staff`, {
@@ -150,7 +155,7 @@ function StaffTab({ org, reload }: { org: Org; reload: () => Promise<void> }) {
   };
 
   const remove = async (staffId: number) => {
-    const ok = await showConfirm('Удалить сотрудника?');
+    const ok = await showConfirm(t('staffTab.confirmDelete'));
     if (!ok) return;
     try {
       await api(`/api/manager/staff/${staffId}`, { method: 'DELETE' });
@@ -163,46 +168,37 @@ function StaffTab({ org, reload }: { org: Org; reload: () => Promise<void> }) {
 
   return (
     <div>
-      <Help title="Как добавить сотрудника">
-        <p>
-          Сотрудник — это человек, чью посещаемость отмечают ассистенты
-          (например, повар, уборщица, продавец). Ему <b>не нужен Telegram</b> —
-          просто введите ФИО.
-        </p>
-        <p>
-          Если сотрудник хочет сам видеть свою историю посещений в боте —
-          включите «Создать код привязки» при добавлении (или нажмите кнопку
-          «Код» позже). Отдайте код сотруднику, он отправит его боту как
-          сообщение и привяжет свой Telegram.
-        </p>
+      <Help title={t('staffTab.help.title')}>
+        <p>{t('staffTab.help.body1')}</p>
+        <p>{t('staffTab.help.body2')}</p>
       </Help>
       {!showForm && (
         <Button onClick={() => setShowForm(true)} className="mb-4">
-          + Добавить сотрудника
+          {t('staffTab.addStaff')}
         </Button>
       )}
       {showForm && (
         <Card className="mb-4">
-          <div className="font-semibold mb-3">Новый сотрудник</div>
+          <div className="font-semibold mb-3">{t('staffTab.new')}</div>
           <Input
-            label="ФИО"
+            label={t('common.fullName')}
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder="Иванов Иван"
+            placeholder={t('staffTab.namePlaceholder')}
           />
           <Input
-            label="Должность"
+            label={t('common.position')}
             value={position}
             onChange={(e) => setPosition(e.target.value)}
-            placeholder="Повар"
-            hint="Необязательно"
+            placeholder={t('staffTab.positionPlaceholder')}
+            hint={t('common.optional')}
           />
           <Input
-            label="Телефон"
+            label={t('common.phone')}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="+998 90 123 45 67"
-            hint="Необязательно"
+            placeholder={t('staffTab.phonePlaceholder')}
+            hint={t('common.optional')}
           />
           <label className="flex items-start gap-2 mb-3 px-1">
             <input
@@ -212,18 +208,18 @@ function StaffTab({ org, reload }: { org: Org; reload: () => Promise<void> }) {
               className="w-5 h-5 mt-0.5 flex-shrink-0"
             />
             <span className="text-sm leading-snug">
-              Создать код привязки к Telegram
+              {t('staffTab.invite')}
               <div className="text-xs text-tg-hint mt-0.5">
-                Нужен только если сотрудник сам хочет видеть свою историю
+                {t('staffTab.inviteHint')}
               </div>
             </span>
           </label>
           <div className="flex gap-2">
             <Button onClick={() => setShowForm(false)} variant="secondary">
-              Отмена
+              {t('common.cancel')}
             </Button>
             <Button onClick={submit} disabled={saving}>
-              {saving ? 'Сохранение...' : 'Добавить'}
+              {saving ? t('common.saving') : t('common.add')}
             </Button>
           </div>
         </Card>
@@ -231,7 +227,7 @@ function StaffTab({ org, reload }: { org: Org; reload: () => Promise<void> }) {
       {org.staff.length === 0 && !showForm && (
         <div className="text-center text-tg-hint mt-6">
           <div className="text-4xl mb-2">👥</div>
-          Пока никого нет
+          {t('staffTab.empty')}
         </div>
       )}
       <div className="space-y-2">
@@ -250,13 +246,18 @@ function StaffTab({ org, reload }: { org: Org; reload: () => Promise<void> }) {
                 )}
                 <div className="text-xs mt-1">
                   {s.userId ? (
-                    <span className="text-green-500">🔗 Привязан к Telegram</span>
+                    <span className="text-green-500">
+                      {t('staffTab.linked')}
+                    </span>
                   ) : s.inviteCode ? (
                     <span className="text-blue-500">
-                      Код: отправьте в бот <code>link:{s.inviteCode}</code>
+                      {t('staffTab.sendCode')}{' '}
+                      <code>link:{s.inviteCode}</code>
                     </span>
                   ) : (
-                    <span className="text-tg-hint">Не привязан</span>
+                    <span className="text-tg-hint">
+                      {t('common.notLinked')}
+                    </span>
                   )}
                 </div>
               </div>
@@ -266,14 +267,14 @@ function StaffTab({ org, reload }: { org: Org; reload: () => Promise<void> }) {
                     onClick={() => genInvite(s.id)}
                     className="text-xs px-3 py-2 rounded-xl bg-tg-button text-tg-buttonText font-semibold"
                   >
-                    Код
+                    {t('common.code')}
                   </button>
                 )}
                 <button
                   onClick={() => remove(s.id)}
                   className="text-xs px-3 py-2 rounded-xl bg-red-500 text-white font-semibold"
                 >
-                  Удалить
+                  {t('common.delete')}
                 </button>
               </div>
             </div>
@@ -291,11 +292,12 @@ function AssistantsTab({
   org: Org;
   reload: () => Promise<void>;
 }) {
+  const { t } = useT();
   const [identifier, setIdentifier] = useState('');
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
-    if (!identifier.trim()) return showAlert('Введите @username или ID');
+    if (!identifier.trim()) return showAlert(t('asstTab.enterIdentifier'));
     setSaving(true);
     try {
       await api(`/api/manager/orgs/${org.id}/assistants`, {
@@ -314,7 +316,7 @@ function AssistantsTab({
   };
 
   const remove = async (assistantId: number) => {
-    const ok = await showConfirm('Убрать ассистента?');
+    const ok = await showConfirm(t('asstTab.confirmRemove'));
     if (!ok) return;
     try {
       await api(`/api/manager/assistants/${assistantId}`, { method: 'DELETE' });
@@ -326,39 +328,28 @@ function AssistantsTab({
 
   return (
     <div>
-      <Help title="Как добавить ассистента">
-        <p>
-          Ассистент — это человек, который будет отмечать посещаемость
-          сотрудников в приложении (например, администратор смены).
-        </p>
-        <p>
-          <b>Шаг 1.</b> Попросите ассистента открыть бота и нажать{' '}
-          <code>/start</code> — без этого бот его «не знает».
-        </p>
-        <p>
-          <b>Шаг 2.</b> Введите его <b>@username</b> (например,{' '}
-          <code>@ivanov</code>) или <b>числовой Telegram ID</b>. Узнать ID можно
-          командой <code>/id</code> в боте — он пришлёт в ответ число вида{' '}
-          <code>123456789</code>.
-        </p>
+      <Help title={t('asstTab.help.title')}>
+        <p>{t('asstTab.help.body1')}</p>
+        <p>{t('asstTab.help.step1')}</p>
+        <p>{t('asstTab.help.step2')}</p>
       </Help>
       <Card className="mb-4">
-        <div className="font-semibold mb-3">Добавить ассистента</div>
+        <div className="font-semibold mb-3">{t('asstTab.add')}</div>
         <Input
-          label="@username или Telegram ID"
+          label={t('asstTab.label')}
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
-          placeholder="@ivanov или 123456789"
-          hint="Ассистент должен был хотя бы раз нажать /start в боте"
+          placeholder={t('asstTab.placeholder')}
+          hint={t('asstTab.hint')}
         />
         <Button onClick={submit} disabled={saving}>
-          {saving ? 'Добавление...' : 'Добавить'}
+          {saving ? t('common.adding') : t('common.add')}
         </Button>
       </Card>
       {org.assistants.length === 0 && (
         <div className="text-center text-tg-hint mt-6">
           <div className="text-4xl mb-2">🧑‍💼</div>
-          Ассистентов пока нет
+          {t('asstTab.empty')}
         </div>
       )}
       <div className="space-y-2">
@@ -370,14 +361,16 @@ function AssistantsTab({
                   {a.user.firstName} {a.user.lastName || ''}
                 </div>
                 <div className="text-xs text-tg-hint truncate">
-                  {a.user.username ? `@${a.user.username}` : `id ${a.user.telegramId}`}
+                  {a.user.username
+                    ? `@${a.user.username}`
+                    : `id ${a.user.telegramId}`}
                 </div>
               </div>
               <button
                 onClick={() => remove(a.id)}
                 className="text-xs px-3 py-2 rounded-xl bg-red-500 text-white font-semibold"
               >
-                Убрать
+                {t('common.remove')}
               </button>
             </div>
           </Card>
@@ -394,6 +387,7 @@ function SettingsTab({
   org: Org;
   reload: () => Promise<void>;
 }) {
+  const { t } = useT();
   const [name, setName] = useState(org.name);
   const [startTime, setStartTime] = useState(
     `${pad(org.markStartHour)}:${pad(org.markStartMin)}`,
@@ -429,9 +423,7 @@ function SettingsTab({
   };
 
   const remove = async () => {
-    const ok = await showConfirm(
-      'Удалить организацию? Все сотрудники и записи будут потеряны.',
-    );
+    const ok = await showConfirm(t('settingsTab.confirmDelete'));
     if (!ok) return;
     try {
       await api(`/api/manager/orgs/${org.id}`, { method: 'DELETE' });
@@ -443,28 +435,21 @@ function SettingsTab({
 
   return (
     <div>
-      <Help title="Что такое окно отметки?">
-        <p>
-          Окно отметки — это промежуток времени, в который ассистент может
-          отмечать посещаемость сотрудников. Например, <b>07:00 — 08:00</b>:
-          ассистент открывает приложение утром и отмечает «пришёл / опоздал /
-          отсутствует».
-        </p>
-        <p>
-          После закрытия окна отметить уже нельзя — отчёт «замораживается» и
-          автоматически уходит вам в Telegram. Часовой пояс:{' '}
-          <b>{org.timezone}</b>.
-        </p>
+      <Help title={t('settingsTab.help.title')}>
+        <p>{t('settingsTab.help.body1')}</p>
+        <p>{t('settingsTab.help.body2', org.timezone)}</p>
       </Help>
       <Card>
         <Input
-          label="Название"
+          label={t('common.name')}
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
         <div className="grid grid-cols-2 gap-3 mb-3">
           <label className="block">
-            <div className="text-sm font-medium mb-1.5 px-1">Начало окна</div>
+            <div className="text-sm font-medium mb-1.5 px-1">
+              {t('manager.windowStart')}
+            </div>
             <input
               type="time"
               value={startTime}
@@ -473,7 +458,9 @@ function SettingsTab({
             />
           </label>
           <label className="block">
-            <div className="text-sm font-medium mb-1.5 px-1">Конец окна</div>
+            <div className="text-sm font-medium mb-1.5 px-1">
+              {t('manager.windowEnd')}
+            </div>
             <input
               type="time"
               value={endTime}
@@ -483,10 +470,10 @@ function SettingsTab({
           </label>
         </div>
         <Button onClick={save} disabled={saving} className="mb-2">
-          {saving ? 'Сохранение...' : 'Сохранить'}
+          {saving ? t('common.saving') : t('common.save')}
         </Button>
         <Button onClick={remove} variant="danger">
-          Удалить организацию
+          {t('settingsTab.deleteOrg')}
         </Button>
       </Card>
     </div>
@@ -494,6 +481,7 @@ function SettingsTab({
 }
 
 function ReportTab({ org }: { org: Org }) {
+  const { t } = useT();
   const [data, setData] = useState<any>(null);
   const [date, setDate] = useState('');
 
@@ -521,19 +509,12 @@ function ReportTab({ org }: { org: Org }) {
 
   return (
     <div>
-      <Help title="Что показывает отчёт">
-        <p>
-          Здесь вы видите посещаемость за выбранный день. По умолчанию
-          показывается сегодняшний день — выберите другую дату, чтобы
-          посмотреть историю.
-        </p>
-        <p>
-          Сотрудники, которых ассистент не отметил до закрытия окна,
-          автоматически считаются отсутствующими (❌).
-        </p>
+      <Help title={t('report.help.title')}>
+        <p>{t('report.help.body1')}</p>
+        <p>{t('report.help.body2')}</p>
       </Help>
       <Card className="mb-3">
-        <div className="text-sm font-medium mb-1.5 px-1">Дата</div>
+        <div className="text-sm font-medium mb-1.5 px-1">{t('report.date')}</div>
         <div className="flex items-center gap-2 mb-3">
           <input
             type="date"
@@ -548,15 +529,15 @@ function ReportTab({ org }: { org: Org }) {
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="bg-green-500/10 rounded-xl p-3">
             <div className="text-2xl font-bold text-green-500">{present}</div>
-            <div className="text-xs text-tg-hint">Пришли</div>
+            <div className="text-xs text-tg-hint">{t('report.present')}</div>
           </div>
           <div className="bg-yellow-500/10 rounded-xl p-3">
             <div className="text-2xl font-bold text-yellow-500">{late}</div>
-            <div className="text-xs text-tg-hint">Опоздали</div>
+            <div className="text-xs text-tg-hint">{t('report.late')}</div>
           </div>
           <div className="bg-red-500/10 rounded-xl p-3">
             <div className="text-2xl font-bold text-red-500">{absent}</div>
-            <div className="text-xs text-tg-hint">Отсутств.</div>
+            <div className="text-xs text-tg-hint">{t('report.absent')}</div>
           </div>
         </div>
       </Card>
@@ -573,9 +554,15 @@ function ReportTab({ org }: { org: Org }) {
                 )}
               </div>
               <div>
-                {r.status === 'PRESENT' && <span className="text-green-500">✅</span>}
-                {r.status === 'LATE' && <span className="text-yellow-500">🟡</span>}
-                {r.status === 'ABSENT' && <span className="text-red-500">❌</span>}
+                {r.status === 'PRESENT' && (
+                  <span className="text-green-500">✅</span>
+                )}
+                {r.status === 'LATE' && (
+                  <span className="text-yellow-500">🟡</span>
+                )}
+                {r.status === 'ABSENT' && (
+                  <span className="text-red-500">❌</span>
+                )}
               </div>
             </div>
           </Card>

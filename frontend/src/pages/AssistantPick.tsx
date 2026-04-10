@@ -4,6 +4,7 @@ import { api, Me } from '../lib/api';
 import Layout from '../components/Layout';
 import { Card, Help } from '../components/Card';
 import Spinner from '../components/Spinner';
+import { useT } from '../lib/i18n';
 
 type Org = {
   id: number;
@@ -18,7 +19,8 @@ function pad(n: number) {
   return n.toString().padStart(2, '0');
 }
 
-export default function AssistantPick({ me }: { me: Me }) {
+export default function AssistantPick({ me: _me }: { me: Me }) {
+  const { t } = useT();
   const [orgs, setOrgs] = useState<Org[] | null>(null);
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export default function AssistantPick({ me }: { me: Me }) {
 
   if (!orgs)
     return (
-      <Layout title="Выбор организации" back>
+      <Layout title={t('assistantPick.title')} back>
         <div className="flex justify-center py-12">
           <Spinner />
         </div>
@@ -35,25 +37,17 @@ export default function AssistantPick({ me }: { me: Me }) {
     );
 
   return (
-    <Layout title="Отметить посещение" back>
-      <Help title="Как отмечать посещаемость">
-        <p>
-          Выберите организацию, где нужно отметить сотрудников. Вы увидите
-          список всех сотрудников и сможете отметить каждого: пришёл,
-          опоздал или отсутствует.
-        </p>
-        <p>
-          ⚠️ Отмечать можно только в пределах <b>окна отметки</b> — время
-          указано на каждой карточке. После закрытия окна приложение
-          заблокирует отметку.
-        </p>
+    <Layout title={t('assistantPick.title')} back>
+      <Help title={t('assistantPick.help.title')}>
+        <p>{t('assistantPick.help.body1')}</p>
+        <p>{t('assistantPick.help.body2')}</p>
       </Help>
       {orgs.length === 0 && (
         <div className="text-center text-tg-hint mt-10">
           <div className="text-5xl mb-3">🤷</div>
-          <div>Вы не назначены ни в одну организацию</div>
+          <div>{t('assistantPick.empty')}</div>
           <div className="text-xs mt-2 px-6">
-            Попросите управляющего добавить вас в ассистенты
+            {t('assistantPick.emptyHint')}
           </div>
         </div>
       )}

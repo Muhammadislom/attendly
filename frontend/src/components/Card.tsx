@@ -1,4 +1,5 @@
 import { ReactNode, useState } from 'react';
+import { useT } from '../lib/i18n';
 
 export function Card({
   children,
@@ -88,7 +89,7 @@ export function Input(
 // A collapsible "How does this work?" block for in-context documentation.
 // Keeps screens compact by default; user taps to reveal details.
 export function Help({
-  title = 'Как это работает?',
+  title,
   children,
   defaultOpen = false,
 }: {
@@ -96,7 +97,9 @@ export function Help({
   children: ReactNode;
   defaultOpen?: boolean;
 }) {
+  const { t } = useT();
   const [open, setOpen] = useState(defaultOpen);
+  const label = title ?? t('common.how');
   return (
     <div className="mb-4 rounded-2xl bg-tg-button/10 ring-1 ring-tg-button/20 overflow-hidden">
       <button
@@ -106,7 +109,7 @@ export function Help({
       >
         <span className="text-sm font-semibold flex items-center gap-2">
           <span>💡</span>
-          <span>{title}</span>
+          <span>{label}</span>
         </span>
         <span className={`text-tg-hint transition-transform ${open ? 'rotate-180' : ''}`}>
           ▾

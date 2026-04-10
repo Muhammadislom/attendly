@@ -5,6 +5,7 @@ import Layout from '../components/Layout';
 import { Card, Button, Input, Help } from '../components/Card';
 import Spinner from '../components/Spinner';
 import { notify, showAlert } from '../lib/telegram';
+import { useT } from '../lib/i18n';
 
 type Org = {
   id: number;
@@ -22,6 +23,7 @@ function pad(n: number) {
 }
 
 export default function ManagerOrgs({ me }: { me: Me }) {
+  const { t } = useT();
   const [orgs, setOrgs] = useState<Org[] | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
@@ -40,7 +42,7 @@ export default function ManagerOrgs({ me }: { me: Me }) {
 
   if (!orgs)
     return (
-      <Layout title="Мои организации" back>
+      <Layout title={t('manager.title')} back>
         <div className="flex justify-center py-12">
           <Spinner />
         </div>
@@ -52,7 +54,7 @@ export default function ManagerOrgs({ me }: { me: Me }) {
   const canManage = me.user.role === 'MANAGER';
 
   const submit = async () => {
-    if (!name.trim()) return showAlert('Введите название');
+    if (!name.trim()) return showAlert(t('manager.enterName'));
     const [sh, sm] = startTime.split(':').map(Number);
     const [eh, em] = endTime.split(':').map(Number);
     setSaving(true);
@@ -81,43 +83,35 @@ export default function ManagerOrgs({ me }: { me: Me }) {
   };
 
   return (
-    <Layout title="Мои организации" back>
+    <Layout title={t('manager.title')} back>
       {canManage && (
-        <Help title="Что такое организация?">
-          <p>
-            Организация — это ваш объект учёта посещаемости (кофейня, магазин,
-            офис). В ней будут:
-          </p>
-          <p>
-            • <b>Сотрудники</b> — те, чью посещаемость отмечают.
-            <br />• <b>Ассистенты</b> — те, кто отмечает посещаемость в
-            приложении.
-            <br />• <b>Окно отметки</b> — промежуток времени, когда можно
-            отмечать. После закрытия окна вам автоматически приходит отчёт в
-            Telegram.
-          </p>
+        <Help title={t('manager.help.title')}>
+          <p>{t('manager.help.body1')}</p>
+          <p className="whitespace-pre-line">{t('manager.help.bullets')}</p>
         </Help>
       )}
 
       {canManage && !showForm && (
         <Button onClick={() => setShowForm(true)} className="mb-4">
-          + Добавить организацию
+          {t('manager.addOrg')}
         </Button>
       )}
 
       {showForm && (
         <Card className="mb-4">
-          <div className="font-semibold mb-3">Новая организация</div>
+          <div className="font-semibold mb-3">{t('manager.newOrg')}</div>
           <Input
-            label="Название"
+            label={t('common.name')}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Кофейня Uptown"
-            hint="Как будет называться объект у вас в списке"
+            placeholder={t('manager.orgNamePlaceholder')}
+            hint={t('manager.orgNameHint')}
           />
           <div className="grid grid-cols-2 gap-3 mb-2">
             <label className="block">
-              <div className="text-sm font-medium mb-1.5 px-1">Начало окна</div>
+              <div className="text-sm font-medium mb-1.5 px-1">
+                {t('manager.windowStart')}
+              </div>
               <input
                 type="time"
                 value={startTime}
@@ -126,7 +120,9 @@ export default function ManagerOrgs({ me }: { me: Me }) {
               />
             </label>
             <label className="block">
-              <div className="text-sm font-medium mb-1.5 px-1">Конец окна</div>
+              <div className="text-sm font-medium mb-1.5 px-1">
+                {t('manager.windowEnd')}
+              </div>
               <input
                 type="time"
                 value={endTime}
@@ -136,15 +132,14 @@ export default function ManagerOrgs({ me }: { me: Me }) {
             </label>
           </div>
           <div className="text-xs text-tg-hint mb-3 px-1 leading-snug">
-            Часовой пояс: Asia/Tashkent. После закрытия окна вы получите отчёт
-            в Telegram.
+            {t('manager.tzHint')}
           </div>
           <div className="flex gap-2">
             <Button onClick={() => setShowForm(false)} variant="secondary">
-              Отмена
+              {t('common.cancel')}
             </Button>
             <Button onClick={submit} disabled={saving}>
-              {saving ? 'Сохранение...' : 'Создать'}
+              {saving ? t('common.saving') : t('common.create')}
             </Button>
           </div>
         </Card>
@@ -153,11 +148,9 @@ export default function ManagerOrgs({ me }: { me: Me }) {
       {orgs.length === 0 && !showForm && (
         <div className="text-center text-tg-hint mt-10">
           <div className="text-5xl mb-3">🏢</div>
-          <div>У вас пока нет организаций</div>
+          <div>{t('manager.noOrgs')}</div>
           {canManage && (
-            <div className="text-xs mt-2 px-6">
-              Нажмите «Добавить организацию», чтобы начать
-            </div>
+            <div className="text-xs mt-2 px-6">{t('manager.noOrgsHint')}</div>
           )}
         </div>
       )}

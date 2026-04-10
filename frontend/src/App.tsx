@@ -9,8 +9,10 @@ import AssistantPick from './pages/AssistantPick';
 import AssistantMark from './pages/AssistantMark';
 import StaffHistory from './pages/StaffHistory';
 import Spinner from './components/Spinner';
+import { useT } from './lib/i18n';
 
 export default function App() {
+  const { t } = useT();
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [authFailed, setAuthFailed] = useState(false);
@@ -22,7 +24,7 @@ export default function App() {
       const data = await api<Me>('/api/me');
       setMe(data);
     } catch (e: any) {
-      const msg = e.message || 'Ошибка загрузки';
+      const msg = e.message || 'Error';
       // Any auth-related failure (no initData, wrong HMAC, stale, etc.)
       // shows the friendly "open via Telegram" screen.
       if (
@@ -46,16 +48,17 @@ export default function App() {
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="max-w-sm text-center space-y-4">
           <div className="text-5xl">📱</div>
-          <h1 className="text-xl font-semibold">Откройте через Telegram</h1>
+          <h1 className="text-xl font-semibold">
+            {t('auth.openViaTelegram')}
+          </h1>
           <p className="text-sm opacity-80">
-            Это мини-приложение работает только внутри Telegram. Откройте бота
-            и нажмите кнопку «Открыть» рядом с полем ввода или команду /app.
+            {t('auth.openViaTelegramHint')}
           </p>
           <button
             onClick={reload}
             className="px-4 py-2 rounded-xl bg-tg-button text-tg-buttonText"
           >
-            Повторить
+            {t('common.retry')}
           </button>
         </div>
       </div>
@@ -70,7 +73,7 @@ export default function App() {
           onClick={reload}
           className="px-4 py-2 rounded-xl bg-tg-button text-tg-buttonText"
         >
-          Повторить
+          {t('common.retry')}
         </button>
       </div>
     );
