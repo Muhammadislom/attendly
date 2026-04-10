@@ -9,8 +9,12 @@ function required(name: string): string {
 export const config = {
   databaseUrl: required('DATABASE_URL'),
   botToken: required('BOT_TOKEN'),
-  superAdminId: BigInt(required('SUPER_ADMIN_ID')),
-  webappUrl: required('WEBAPP_URL'),
+  // Optional: if not set, no super-admin will be auto-assigned
+  superAdminId: process.env.SUPER_ADMIN_ID
+    ? BigInt(process.env.SUPER_ADMIN_ID)
+    : 0n,
+  // Optional: if not set, the bot won't attach a WebApp button
+  webappUrl: process.env.WEBAPP_URL || '',
   port: Number(process.env.PORT || 3000),
   host: process.env.HOST || '0.0.0.0',
 };

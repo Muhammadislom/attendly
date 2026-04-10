@@ -8,7 +8,8 @@ export const bot = new Telegraf(config.botToken);
 async function upsertUser(ctx: any) {
   const from = ctx.from;
   if (!from) return null;
-  const isSuper = BigInt(from.id) === config.superAdminId;
+  const isSuper =
+    config.superAdminId !== 0n && BigInt(from.id) === config.superAdminId;
   return prisma.user.upsert({
     where: { telegramId: BigInt(from.id) },
     update: {
@@ -42,15 +43,24 @@ bot.start(async (ctx) => {
       ? 'Добро пожаловать!\n\nОткройте приложение чтобы посмотреть свои посещения.'
       : 'Привет! Вы зарегистрированы. Если управляющий добавит вас в организацию — откройте приложение.';
 
-  await ctx.reply(
-    greeting,
-    Markup.keyboard([
-      [Markup.button.webApp('📱 Открыть приложение', config.webappUrl)],
-    ]).resize(),
-  );
+  if (config.webappUrl) {
+    await ctx.reply(
+      greeting,
+      Markup.keyboard([
+        [Markup.button.webApp('📱 Открыть приложение', config.webappUrl)],
+      ]).resize(),
+    );
+  } else {
+    await ctx.reply(
+      greeting + '\n\n⚠️ WebApp ещё не настроен администратором.',
+    );
+  }
 });
 
 bot.command('app', async (ctx) => {
+  if (!config.webappUrl) {
+    return ctx.reply('⚠️ WebApp ещё не настроен.');
+  }
   await ctx.reply(
     'Откройте приложение:',
     Markup.inlineKeyboard([
