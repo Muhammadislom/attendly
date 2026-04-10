@@ -45,6 +45,11 @@ export async function authMiddleware(
   req: FastifyRequest,
   reply: FastifyReply,
 ) {
+  // Only protect /api/* routes. Public routes (/, /health, static assets, SPA fallback)
+  // must pass through without Telegram initData so Railway healthcheck and the WebApp
+  // HTML itself can load.
+  if (!req.url.startsWith('/api/')) return;
+
   const initData = req.headers['x-telegram-init-data'];
   if (typeof initData !== 'string') {
     return reply.code(401).send({ error: 'Missing initData' });
