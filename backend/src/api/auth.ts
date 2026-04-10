@@ -8,8 +8,14 @@ import { Role, User } from '@prisma/client';
 export function verifyInitData(initData: string): Record<string, string> | null {
   const urlParams = new URLSearchParams(initData);
   const hash = urlParams.get('hash');
-  if (!hash) return null;
+  if (!hash) {
+    console.warn('[initData] missing hash');
+    return null;
+  }
   urlParams.delete('hash');
+  // Newer Telegram clients include a `signature` field (Ed25519) that is NOT
+  // part of the HMAC data-check-string and must be excluded.
+  urlParams.delete('signature');
 
   const dataCheckString = [...urlParams.entries()]
     .map(([k, v]) => `${k}=${v}`)
@@ -26,11 +32,21 @@ export function verifyInitData(initData: string): Record<string, string> | null 
     .update(dataCheckString)
     .digest('hex');
 
-  if (computed !== hash) return null;
+  if (computed !== hash) {
+    console.warn('[initData] HMAC mismatch', {
+      expected: hash,
+      computed,
+      keys: [...urlParams.keys()],
+    });
+    return null;
+  }
 
   // Optional freshness check (24h)
   const authDate = Number(urlParams.get('auth_date') || 0);
-  if (!authDate || Date.now() / 1000 - authDate > 86400) return null;
+  if (!authDate || Date.now() / 1000 - authDate > 86400) {
+    console.warn('[initData] stale or missing auth_date', { authDate });
+    return null;
+  }
 
   return Object.fromEntries(urlParams.entries());
 }
