@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { api, Me } from './lib/api';
+import { tg } from './lib/telegram';
 import Home from './pages/Home';
 import AdminUsers from './pages/AdminUsers';
 import ManagerOrgs from './pages/ManagerOrgs';
@@ -14,6 +15,11 @@ export default function App() {
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Detect whether the page is actually running inside Telegram. Outside
+  // Telegram `initData` is empty and any API call will return 401, which
+  // would otherwise show as a confusing "Missing initData" error.
+  const insideTelegram = !!tg()?.initData;
+
   const reload = async () => {
     try {
       setError(null);
@@ -25,8 +31,24 @@ export default function App() {
   };
 
   useEffect(() => {
+    if (!insideTelegram) return;
     reload();
-  }, []);
+  }, [insideTelegram]);
+
+  if (!insideTelegram) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="max-w-sm text-center space-y-4">
+          <div className="text-5xl">📱</div>
+          <h1 className="text-xl font-semibold">Откройте через Telegram</h1>
+          <p className="text-sm opacity-80">
+            Это мини-приложение работает только внутри Telegram. Откройте бота
+            и нажмите кнопку «📱 Открыть приложение» или команду /app.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (

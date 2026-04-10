@@ -99,7 +99,18 @@ bot.on('text', async (ctx, next) => {
 });
 
 export async function startBot() {
-  bot.launch();
+  // launch() never resolves while polling is running. We intentionally do NOT
+  // await it so the rest of the server can boot. But we MUST attach a catch
+  // handler — otherwise a Telegram API error (e.g. 409 Conflict during a
+  // zero-downtime redeploy when the previous instance still holds getUpdates)
+  // becomes an unhandled rejection and crashes the process, taking the API and
+  // WebApp down with it.
+  bot
+    .launch({ dropPendingUpdates: true })
+    .catch((err) => {
+      console.error('🤖 Telegram bot crashed:', err?.message || err);
+      // Don't exit — keep API + WebApp alive. Railway will redeploy if needed.
+    });
   process.once('SIGINT', () => bot.stop('SIGINT'));
   process.once('SIGTERM', () => bot.stop('SIGTERM'));
   console.log('🤖 Telegram bot started');
