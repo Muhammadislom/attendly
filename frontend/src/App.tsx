@@ -1,0 +1,65 @@
+import { useEffect, useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { api, Me } from './lib/api';
+import Home from './pages/Home';
+import AdminUsers from './pages/AdminUsers';
+import ManagerOrgs from './pages/ManagerOrgs';
+import ManagerOrgDetail from './pages/ManagerOrgDetail';
+import AssistantPick from './pages/AssistantPick';
+import AssistantMark from './pages/AssistantMark';
+import StaffHistory from './pages/StaffHistory';
+import Spinner from './components/Spinner';
+
+export default function App() {
+  const [me, setMe] = useState<Me | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const reload = async () => {
+    try {
+      setError(null);
+      const data = await api<Me>('/api/me');
+      setMe(data);
+    } catch (e: any) {
+      setError(e.message || 'Ошибка загрузки');
+    }
+  };
+
+  useEffect(() => {
+    reload();
+  }, []);
+
+  if (error) {
+    return (
+      <div className="p-6 text-center">
+        <div className="text-red-500 mb-4">⚠️ {error}</div>
+        <button
+          onClick={reload}
+          className="px-4 py-2 rounded-xl bg-tg-button text-tg-buttonText"
+        >
+          Повторить
+        </button>
+      </div>
+    );
+  }
+
+  if (!me) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/" element={<Home me={me} reload={reload} />} />
+      <Route path="/admin/users" element={<AdminUsers me={me} />} />
+      <Route path="/manager" element={<ManagerOrgs me={me} />} />
+      <Route path="/manager/orgs/:id" element={<ManagerOrgDetail me={me} />} />
+      <Route path="/assistant" element={<AssistantPick me={me} />} />
+      <Route path="/assistant/orgs/:id" element={<AssistantMark me={me} />} />
+      <Route path="/staff" element={<StaffHistory me={me} />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}

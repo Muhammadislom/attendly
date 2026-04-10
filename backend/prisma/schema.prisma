@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  MANAGER
+  ASSISTANT
+  STAFF
+  NONE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+// Every telegram user who has /start'ed the bot
+model User {
+  id         Int      @id @default(autoincrement())
+  telegramId BigInt   @unique
+  firstName  String
+  lastName   String?
+  username   String?
+  phone      String?
+  role       Role     @default(NONE)
+  createdAt  DateTime @default(now())
+
+  managedOrgs Organization[]       @relation("ManagerOrgs")
+  assistantOf Assistant[]
+  staffLink   Staff[]
+}
+
+model Organization {
+  id            Int      @id @default(autoincrement())
+  name          String
+  managerId    Int
+  manager       User     @relation("ManagerOrgs", fields: [managerId], references: [id], onDelete: Cascade)
+  markStartHour Int      @default(7)
+  markStartMin  Int      @default(0)
+  markEndHour   Int      @default(8)
+  markEndMin    Int      @default(0)
+  timezone      String   @default("Asia/Tashkent")
+  createdAt     DateTime @default(now())
+  lastReportSent DateTime?
+
+  assistants Assistant[]
+  staff      Staff[]
+  attendance Attendance[]
+}
+
+model Assistant {
+  id             Int          @id @default(autoincrement())
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([organizationId, userId])
+}
+
+model Staff {
+  id             Int          @id @default(autoincrement())
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  fullName       String
+  position       String?
+  phone          String?
+  userId         Int?
+  user           User?        @relation(fields: [userId], references: [id])
+  inviteCode     String?      @unique
+  active         Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  attendance Attendance[]
+}
+
+model Attendance {
+  id             Int              @id @default(autoincrement())
+  organizationId Int
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  staffId        Int
+  staff          Staff            @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  date           String           // YYYY-MM-DD in org timezone
+  status         AttendanceStatus
+  markedById     Int?
+  markedAt       DateTime         @default(now())
+
+  @@unique([staffId, date])
+}
