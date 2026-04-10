@@ -42,6 +42,20 @@ export default function App() {
   }, []);
 
   if (authFailed) {
+    const w: any = typeof window !== 'undefined' ? window : {};
+    const tgw = w.Telegram?.WebApp;
+    const debug = {
+      hasTelegram: !!w.Telegram,
+      hasWebApp: !!tgw,
+      version: tgw?.version ?? null,
+      platform: tgw?.platform ?? null,
+      initDataLen: tgw?.initData?.length ?? 0,
+      initDataUnsafeKeys: tgw?.initDataUnsafe
+        ? Object.keys(tgw.initDataUnsafe)
+        : [],
+      href: w.location?.href ?? '',
+      hash: w.location?.hash ?? '',
+    };
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="max-w-sm text-center space-y-4">
@@ -57,6 +71,9 @@ export default function App() {
           >
             Повторить
           </button>
+          <pre className="text-left text-[10px] opacity-60 whitespace-pre-wrap break-all bg-black/20 p-3 rounded-lg">
+            {JSON.stringify(debug, null, 2)}
+          </pre>
         </div>
       </div>
     );
