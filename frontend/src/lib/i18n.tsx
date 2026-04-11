@@ -103,6 +103,8 @@ const dict = {
     'manager.noOrgs': 'У вас пока нет организаций',
     'manager.noOrgsHint': 'Нажмите «Добавить организацию», чтобы начать',
     'manager.enterName': 'Введите название',
+    'manager.invalidWindow':
+      'Время окончания должно быть позже времени начала',
     'manager.help.title': 'Что такое организация?',
     'manager.help.body1':
       'Организация — это ваш объект учёта посещаемости (кофейня, магазин, офис). В ней будут:',
@@ -305,6 +307,8 @@ const dict = {
     'manager.noOrgs': 'Sizda hali tashkilotlar yo‘q',
     'manager.noOrgsHint': 'Boshlash uchun «Tashkilot qo‘shish» tugmasini bosing',
     'manager.enterName': 'Nomni kiriting',
+    'manager.invalidWindow':
+      'Tugash vaqti boshlanish vaqtidan keyin bo‘lishi kerak',
     'manager.help.title': 'Tashkilot nima?',
     'manager.help.body1':
       'Tashkilot — bu sizning davomat nazorat obyektingiz (kafe, do‘kon, ofis). U ichida:',

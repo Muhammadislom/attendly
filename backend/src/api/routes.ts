@@ -11,6 +11,20 @@ function todayIso(tz: string) {
   return DateTime.now().setZone(tz).toFormat('yyyy-LL-dd');
 }
 
+// Returns an error message if the mark window range is invalid
+// (end must be strictly later than start in the same day), or null if OK.
+function validateWindow(
+  startHour: number,
+  startMin: number,
+  endHour: number,
+  endMin: number,
+): string | null {
+  if (endHour * 60 + endMin <= startHour * 60 + startMin) {
+    return 'Время окончания должно быть позже времени начала';
+  }
+  return null;
+}
+
 export async function registerRoutes(app: FastifyInstance) {
   app.addHook('preHandler', authMiddleware);
 
@@ -84,7 +98,7 @@ export async function registerRoutes(app: FastifyInstance) {
   app.post(
     '/api/manager/orgs',
     { preHandler: requireRole(Role.MANAGER) },
-    async (req) => {
+    async (req, reply) => {
       const body = z
         .object({
           name: z.string().min(1),
@@ -95,6 +109,13 @@ export async function registerRoutes(app: FastifyInstance) {
           timezone: z.string().default('Asia/Tashkent'),
         })
         .parse(req.body);
+      const err = validateWindow(
+        body.markStartHour,
+        body.markStartMin,
+        body.markEndHour,
+        body.markEndMin,
+      );
+      if (err) return reply.code(400).send({ error: err });
       const org = await prisma.organization.create({
         data: { ...body, managerId: req.user!.id },
       });
@@ -138,6 +159,13 @@ export async function registerRoutes(app: FastifyInstance) {
         where: { id: Number(id), managerId: req.user!.id },
       });
       if (!org) return reply.code(404).send({ error: 'Not found' });
+      const err = validateWindow(
+        body.markStartHour ?? org.markStartHour,
+        body.markStartMin ?? org.markStartMin,
+        body.markEndHour ?? org.markEndHour,
+        body.markEndMin ?? org.markEndMin,
+      );
+      if (err) return reply.code(400).send({ error: err });
       const updated = await prisma.organization.update({
         where: { id: org.id },
         data: body,

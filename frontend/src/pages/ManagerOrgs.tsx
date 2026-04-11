@@ -57,6 +57,9 @@ export default function ManagerOrgs({ me }: { me: Me }) {
     if (!name.trim()) return showAlert(t('manager.enterName'));
     const [sh, sm] = startTime.split(':').map(Number);
     const [eh, em] = endTime.split(':').map(Number);
+    if (eh * 60 + em <= sh * 60 + sm) {
+      return showAlert(t('manager.invalidWindow'));
+    }
     setSaving(true);
     try {
       await api('/api/manager/orgs', {
