@@ -126,7 +126,11 @@ export default function AdminUsers({ me }: { me: Me }) {
                     </span>
                   </div>
                 </div>
-                {u.role !== 'SUPER_ADMIN' && (
+                {u.role === 'ASSISTANT' ? (
+                  <div className="text-[11px] text-tg-hint text-right max-w-[140px] leading-snug">
+                    {t('admin.cantPromoteAssistant')}
+                  </div>
+                ) : u.role !== 'SUPER_ADMIN' ? (
                   <button
                     disabled={saving === u.id}
                     onClick={() => setRole(u.id, isManager ? 'NONE' : 'MANAGER')}
@@ -140,7 +144,7 @@ export default function AdminUsers({ me }: { me: Me }) {
                       ? t('admin.removeManager')
                       : t('admin.makeManager')}
                   </button>
-                )}
+                ) : null}
               </div>
             </Card>
           );

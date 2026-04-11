@@ -89,6 +89,36 @@ const dict = {
       'NONE — обычный пользователь без особых прав. Присваивается всем новым юзерам после /start.',
     'admin.help.action':
       'Нажмите «Управляющий», чтобы назначить пользователя управляющим — после этого он сможет создавать организации.',
+    'admin.cantPromoteAssistant':
+      'Ассистент. Нельзя назначить управляющим — сначала уберите его из всех организаций.',
+    'admin.assistantBadge': 'Назначен ассистентом',
+
+    // admin dashboard
+    'adminDash.title': 'Панель супер-админа',
+    'adminDash.help.title': 'Что здесь видно',
+    'adminDash.help.body':
+      'Это сводка по всей системе: сколько у вас пользователей, организаций, сотрудников, и сколько отметок было сегодня.',
+    'adminDash.totalUsers': 'Всего пользователей',
+    'adminDash.totalOrgs': 'Организаций',
+    'adminDash.totalStaff': 'Сотрудников',
+    'adminDash.totalAssistants': 'Ассистентов',
+    'adminDash.todayAttendance': 'Отметок сегодня',
+    'adminDash.recentUsers': 'Новых за 7 дней',
+    'adminDash.byRole': 'Распределение по ролям',
+    'adminDash.menuStats': 'Статистика',
+    'adminDash.menuStatsSub': 'Сводка по всей системе',
+    'adminDash.menuOrgs': 'Все организации',
+    'adminDash.menuOrgsSub': 'Список организаций всех управляющих',
+
+    // admin orgs
+    'adminOrgs.title': 'Все организации',
+    'adminOrgs.help.title': 'Что это за список',
+    'adminOrgs.help.body':
+      'Здесь все организации в системе — со всеми управляющими. Это режим только для чтения: создавать и удалять организации могут сами управляющие.',
+    'adminOrgs.empty': 'В системе пока нет организаций',
+    'adminOrgs.search': 'Поиск по названию или управляющему...',
+    'adminOrgs.manager': 'Управляющий: {0}',
+    'adminOrgs.noManagerName': 'без имени',
 
     // manager orgs list
     'manager.title': 'Мои организации',
@@ -293,6 +323,36 @@ const dict = {
       'NONE — maxsus huquqlarsiz oddiy foydalanuvchi. /start dan keyin barcha yangi foydalanuvchilarga beriladi.',
     'admin.help.action':
       'Foydalanuvchini menejer sifatida tayinlash uchun «Menejer» tugmasini bosing — shundan so‘ng u tashkilot yarata oladi.',
+    'admin.cantPromoteAssistant':
+      'Yordamchi. Menejer qilib bo‘lmaydi — avval uni barcha tashkilotlardan olib tashlang.',
+    'admin.assistantBadge': 'Yordamchi sifatida tayinlangan',
+
+    // admin dashboard
+    'adminDash.title': 'Super admin paneli',
+    'adminDash.help.title': 'Bu yerda nima ko‘rinadi',
+    'adminDash.help.body':
+      'Bu butun tizim bo‘yicha umumiy ma’lumot: nechta foydalanuvchi, tashkilot, xodim borligi va bugun nechta belgilash bo‘lganligi.',
+    'adminDash.totalUsers': 'Jami foydalanuvchilar',
+    'adminDash.totalOrgs': 'Tashkilotlar',
+    'adminDash.totalStaff': 'Xodimlar',
+    'adminDash.totalAssistants': 'Yordamchilar',
+    'adminDash.todayAttendance': 'Bugungi belgilashlar',
+    'adminDash.recentUsers': '7 kunda yangi',
+    'adminDash.byRole': 'Rollar bo‘yicha taqsimlash',
+    'adminDash.menuStats': 'Statistika',
+    'adminDash.menuStatsSub': 'Butun tizim bo‘yicha umumiy ma’lumot',
+    'adminDash.menuOrgs': 'Barcha tashkilotlar',
+    'adminDash.menuOrgsSub': 'Barcha menejerlarning tashkilotlari',
+
+    // admin orgs
+    'adminOrgs.title': 'Barcha tashkilotlar',
+    'adminOrgs.help.title': 'Bu qanday ro‘yxat',
+    'adminOrgs.help.body':
+      'Tizimdagi barcha tashkilotlar va ularning menejerlari. Bu faqat o‘qish rejimi: tashkilot yaratish va o‘chirishni faqat menejerlar qila oladi.',
+    'adminOrgs.empty': 'Tizimda hali tashkilotlar yo‘q',
+    'adminOrgs.search': 'Nom yoki menejer bo‘yicha qidiruv...',
+    'adminOrgs.manager': 'Menejer: {0}',
+    'adminOrgs.noManagerName': 'ismsiz',
 
     // manager orgs list
     'manager.title': 'Mening tashkilotlarim',

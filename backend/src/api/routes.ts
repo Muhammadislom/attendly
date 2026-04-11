@@ -56,7 +56,18 @@ export async function registerRoutes(app: FastifyInstance) {
     '/api/admin/users',
     { preHandler: requireRole(Role.SUPER_ADMIN) },
     async () => {
-      const users = await prisma.user.findMany({ orderBy: { createdAt: 'desc' } });
+      const users = await prisma.user.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+          _count: {
+            select: {
+              managedOrgs: true,
+              assistantOf: true,
+              staffLink: true,
+            },
+          },
+        },
+      });
       return clean(users);
     },
   );
@@ -73,11 +84,93 @@ export async function registerRoutes(app: FastifyInstance) {
         .object({ role: z.enum(['MANAGER', 'NONE']) })
         .parse(req.body);
       const id = Number(params.id);
+      const target = await prisma.user.findUnique({ where: { id } });
+      if (!target) return reply.code(404).send({ error: 'Not found' });
+      // Refuse to change SUPER_ADMIN through this endpoint.
+      if (target.role === Role.SUPER_ADMIN) {
+        return reply.code(400).send({ error: 'Нельзя изменить супер-админа' });
+      }
+      // Assistants cannot be promoted to manager — they have active duties
+      // in organizations they assist. Manager must remove them from every
+      // org first; then their role drops back to NONE and promotion is OK.
+      if (body.role === 'MANAGER' && target.role === Role.ASSISTANT) {
+        return reply.code(400).send({
+          error:
+            'Ассистент не может быть назначен управляющим. Сначала уберите его из всех организаций.',
+        });
+      }
       const updated = await prisma.user.update({
         where: { id },
         data: { role: body.role as Role },
       });
       return clean(updated);
+    },
+  );
+
+  // System-wide overview for super admin: counts of users by role,
+  // organizations, staff, today's attendance entries.
+  app.get(
+    '/api/admin/stats',
+    { preHandler: requireRole(Role.SUPER_ADMIN) },
+    async () => {
+      const [
+        totalUsers,
+        totalOrgs,
+        totalStaff,
+        totalAssistants,
+        usersByRole,
+        todayAttendance,
+        recentUsers,
+      ] = await Promise.all([
+        prisma.user.count(),
+        prisma.organization.count(),
+        prisma.staff.count({ where: { active: true } }),
+        prisma.assistant.count(),
+        prisma.user.groupBy({ by: ['role'], _count: { _all: true } }),
+        prisma.attendance.count({
+          where: { date: DateTime.now().setZone('Asia/Tashkent').toFormat('yyyy-LL-dd') },
+        }),
+        prisma.user.count({
+          where: {
+            createdAt: { gte: DateTime.now().minus({ days: 7 }).toJSDate() },
+          },
+        }),
+      ]);
+      const byRole: Record<string, number> = {
+        SUPER_ADMIN: 0,
+        MANAGER: 0,
+        ASSISTANT: 0,
+        STAFF: 0,
+        NONE: 0,
+      };
+      for (const row of usersByRole) {
+        byRole[row.role] = row._count._all;
+      }
+      return {
+        totalUsers,
+        totalOrgs,
+        totalStaff,
+        totalAssistants,
+        todayAttendance,
+        recentUsers,
+        byRole,
+      };
+    },
+  );
+
+  // List of every organization in the system with its manager.
+  app.get(
+    '/api/admin/orgs',
+    { preHandler: requireRole(Role.SUPER_ADMIN) },
+    async () => {
+      const orgs = await prisma.organization.findMany({
+        include: {
+          manager: true,
+          _count: { select: { staff: true, assistants: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      return clean(orgs);
     },
   );
 

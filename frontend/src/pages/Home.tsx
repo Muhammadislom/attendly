@@ -10,14 +10,15 @@ export default function Home({ me, reload }: { me: Me; reload: () => void }) {
   const { t } = useT();
   const items: MenuItem[] = [];
 
-  // Super admin ONLY manages users (assigns/revokes managers). They do not
-  // create organizations or mark attendance — those are manager/assistant
-  // responsibilities per business logic.
+  // Super admin ONLY manages users (assigns/revokes managers) and views
+  // system-wide stats and orgs. They do not create organizations or mark
+  // attendance — those are manager/assistant responsibilities per business
+  // logic.
   if (me.user.role === 'SUPER_ADMIN') {
     items.push({
-      to: '/admin/users',
-      title: t('home.menu.users'),
-      subtitle: t('home.menu.usersSub'),
+      to: '/admin',
+      title: t('adminDash.title'),
+      subtitle: t('adminDash.menuStatsSub'),
       icon: '👑',
     });
   }

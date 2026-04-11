@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { api, Me } from './lib/api';
 import Home from './pages/Home';
+import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
+import AdminOrgs from './pages/AdminOrgs';
 import ManagerOrgs from './pages/ManagerOrgs';
 import ManagerOrgDetail from './pages/ManagerOrgDetail';
 import AssistantPick from './pages/AssistantPick';
@@ -90,7 +92,9 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Home me={me} reload={reload} />} />
+      <Route path="/admin" element={<AdminDashboard me={me} />} />
       <Route path="/admin/users" element={<AdminUsers me={me} />} />
+      <Route path="/admin/orgs" element={<AdminOrgs me={me} />} />
       <Route path="/manager" element={<ManagerOrgs me={me} />} />
       <Route path="/manager/orgs/:id" element={<ManagerOrgDetail me={me} />} />
       <Route path="/assistant" element={<AssistantPick me={me} />} />
