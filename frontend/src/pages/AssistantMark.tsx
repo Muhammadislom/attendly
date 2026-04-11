@@ -86,6 +86,7 @@ export default function AssistantMark({ me: _me }: { me: Me }) {
     new Date(iso).toLocaleTimeString(lang === 'uz' ? 'uz-UZ' : 'ru-RU', {
       hour: '2-digit',
       minute: '2-digit',
+      hour12: false,
     });
 
   const present = data.staff.filter((s) => s.status === 'PRESENT').length;
