@@ -22,6 +22,8 @@ type Stats = {
   };
 };
 
+type MenuItem = { to: string; icon: string; title: string; subtitle: string };
+
 export default function AdminDashboard({ me }: { me: Me }) {
   const { t } = useT();
   const [stats, setStats] = useState<Stats | null>(null);
@@ -66,13 +68,52 @@ export default function AdminDashboard({ me }: { me: Me }) {
     </div>
   );
 
+  const menuItems: MenuItem[] = [
+    {
+      to: '/admin/today',
+      icon: '📊',
+      title: t('adminToday.title'),
+      subtitle: t('adminToday.help.body').slice(0, 60) + '…',
+    },
+    {
+      to: '/admin/users',
+      icon: '👑',
+      title: t('home.menu.users'),
+      subtitle: t('home.menu.usersSub'),
+    },
+    {
+      to: '/admin/orgs',
+      icon: '🏢',
+      title: t('adminDash.menuOrgs'),
+      subtitle: t('adminDash.menuOrgsSub'),
+    },
+    {
+      to: '/admin/activity',
+      icon: '🕐',
+      title: t('adminActivity.title'),
+      subtitle: t('adminActivity.help.body').slice(0, 60) + '…',
+    },
+    {
+      to: '/admin/inactive',
+      icon: '💤',
+      title: t('adminInactive.title'),
+      subtitle: t('adminInactive.help.body').slice(0, 60) + '…',
+    },
+    {
+      to: '/admin/broadcast',
+      icon: '📣',
+      title: t('adminBroadcast.title'),
+      subtitle: t('adminBroadcast.help.body').slice(0, 60) + '…',
+    },
+  ];
+
   return (
     <Layout title={t('adminDash.title')} back>
       <Help title={t('adminDash.help.title')}>
         <p>{t('adminDash.help.body')}</p>
       </Help>
 
-      <div className="grid grid-cols-2 gap-3 mb-3">
+      <div className="grid grid-cols-3 gap-2 mb-3">
         {tile(t('adminDash.totalUsers'), stats.totalUsers, '👥')}
         {tile(t('adminDash.totalOrgs'), stats.totalOrgs, '🏢')}
         {tile(t('adminDash.totalStaff'), stats.totalStaff, '🧑‍🍳')}
@@ -90,31 +131,19 @@ export default function AdminDashboard({ me }: { me: Me }) {
         {roleRow('NONE', 'bg-tg-secondary !text-tg-hint')}
       </Card>
 
-      <div className="space-y-3">
-        <Link to="/admin/users" className="block">
-          <Card className="flex items-center gap-3">
-            <div className="text-3xl">👑</div>
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold">{t('home.menu.users')}</div>
-              <div className="text-sm text-tg-hint truncate">
-                {t('home.menu.usersSub')}
+      <div className="space-y-2">
+        {menuItems.map((it) => (
+          <Link key={it.to} to={it.to} className="block">
+            <Card className="flex items-center gap-3">
+              <div className="text-2xl">{it.icon}</div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-sm">{it.title}</div>
+                <div className="text-xs text-tg-hint truncate">{it.subtitle}</div>
               </div>
-            </div>
-            <div className="text-tg-hint">›</div>
-          </Card>
-        </Link>
-        <Link to="/admin/orgs" className="block">
-          <Card className="flex items-center gap-3">
-            <div className="text-3xl">🏢</div>
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold">{t('adminDash.menuOrgs')}</div>
-              <div className="text-sm text-tg-hint truncate">
-                {t('adminDash.menuOrgsSub')}
-              </div>
-            </div>
-            <div className="text-tg-hint">›</div>
-          </Card>
-        </Link>
+              <div className="text-tg-hint">›</div>
+            </Card>
+          </Link>
+        ))}
       </div>
     </Layout>
   );

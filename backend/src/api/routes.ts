@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import { prisma } from '../db.js';
 import { authMiddleware, requireRole } from './auth.js';
 import { clean } from './serialize.js';
+import { bot } from '../bot/index.js';
 import { Role, AttendanceStatus } from '@prisma/client';
 
 function todayIso(tz: string) {
@@ -171,6 +172,322 @@ export async function registerRoutes(app: FastifyInstance) {
         orderBy: { createdAt: 'desc' },
       });
       return clean(orgs);
+    },
+  );
+
+  // Read-only org detail for super admin: full org with manager, staff,
+  // assistants, and today's attendance roll-up.
+  app.get(
+    '/api/admin/orgs/:id',
+    { preHandler: requireRole(Role.SUPER_ADMIN) },
+    async (req, reply) => {
+      const { id } = z.object({ id: z.string() }).parse(req.params);
+      const org = await prisma.organization.findUnique({
+        where: { id: Number(id) },
+        include: {
+          manager: true,
+          staff: { orderBy: { fullName: 'asc' } },
+          assistants: { include: { user: true } },
+        },
+      });
+      if (!org) return reply.code(404).send({ error: 'Not found' });
+      const date = todayIso(org.timezone);
+      const attendance = await prisma.attendance.findMany({
+        where: { organizationId: org.id, date },
+      });
+      const map = new Map(attendance.map((a) => [a.staffId, a.status]));
+      const present = attendance.filter((a) => a.status === 'PRESENT').length;
+      const late = attendance.filter((a) => a.status === 'LATE').length;
+      const absent = attendance.filter((a) => a.status === 'ABSENT').length;
+      const now = DateTime.now().setZone(org.timezone);
+      const start = now.set({
+        hour: org.markStartHour,
+        minute: org.markStartMin,
+        second: 0,
+      });
+      const end = now.set({
+        hour: org.markEndHour,
+        minute: org.markEndMin,
+        second: 0,
+      });
+      return clean({
+        org,
+        date,
+        windowStart: start.toISO(),
+        windowEnd: end.toISO(),
+        isOpen: now >= start && now <= end,
+        staffWithStatus: org.staff.map((s) => ({
+          ...s,
+          status: map.get(s.id) || null,
+        })),
+        summary: {
+          total: org.staff.length,
+          present,
+          late,
+          absent,
+          unmarked: org.staff.length - present - late - absent,
+        },
+      });
+    },
+  );
+
+  // Read-only user detail for super admin: full profile with all the
+  // organizations they manage, assist, and work in.
+  app.get(
+    '/api/admin/users/:id',
+    { preHandler: requireRole(Role.SUPER_ADMIN) },
+    async (req, reply) => {
+      const { id } = z.object({ id: z.string() }).parse(req.params);
+      const user = await prisma.user.findUnique({
+        where: { id: Number(id) },
+        include: {
+          managedOrgs: {
+            include: { _count: { select: { staff: true } } },
+            orderBy: { createdAt: 'desc' },
+          },
+          assistantOf: { include: { organization: true } },
+          staffLink: {
+            include: {
+              organization: true,
+              attendance: { orderBy: { date: 'desc' }, take: 30 },
+            },
+          },
+        },
+      });
+      if (!user) return reply.code(404).send({ error: 'Not found' });
+      return clean(user);
+    },
+  );
+
+  // Today's marking status across every organization in the system.
+  // Useful for super admin to see who has and hasn't started yet.
+  app.get(
+    '/api/admin/today',
+    { preHandler: requireRole(Role.SUPER_ADMIN) },
+    async () => {
+      const orgs = await prisma.organization.findMany({
+        include: {
+          manager: true,
+          _count: { select: { staff: true } },
+        },
+        orderBy: { name: 'asc' },
+      });
+      const result = await Promise.all(
+        orgs.map(async (org) => {
+          const date = todayIso(org.timezone);
+          const [marked, totalStaff] = await Promise.all([
+            prisma.attendance.count({
+              where: { organizationId: org.id, date },
+            }),
+            prisma.staff.count({
+              where: { organizationId: org.id, active: true },
+            }),
+          ]);
+          const now = DateTime.now().setZone(org.timezone);
+          const start = now.set({
+            hour: org.markStartHour,
+            minute: org.markStartMin,
+            second: 0,
+          });
+          const end = now.set({
+            hour: org.markEndHour,
+            minute: org.markEndMin,
+            second: 0,
+          });
+          let windowState: 'before' | 'open' | 'after';
+          if (now < start) windowState = 'before';
+          else if (now > end) windowState = 'after';
+          else windowState = 'open';
+          return {
+            id: org.id,
+            name: org.name,
+            timezone: org.timezone,
+            markStartHour: org.markStartHour,
+            markStartMin: org.markStartMin,
+            markEndHour: org.markEndHour,
+            markEndMin: org.markEndMin,
+            manager: {
+              id: org.manager.id,
+              firstName: org.manager.firstName,
+              lastName: org.manager.lastName,
+              username: org.manager.username,
+            },
+            totalStaff,
+            marked,
+            windowState,
+            date,
+          };
+        }),
+      );
+      return clean(result);
+    },
+  );
+
+  // Recent activity feed for super admin: latest signups, new orgs,
+  // and attendance marks. Synthesised from existing tables — no audit
+  // log table needed.
+  app.get(
+    '/api/admin/activity',
+    { preHandler: requireRole(Role.SUPER_ADMIN) },
+    async () => {
+      const [users, orgs, marks] = await Promise.all([
+        prisma.user.findMany({
+          orderBy: { createdAt: 'desc' },
+          take: 15,
+        }),
+        prisma.organization.findMany({
+          orderBy: { createdAt: 'desc' },
+          take: 15,
+          include: { manager: true },
+        }),
+        prisma.attendance.findMany({
+          orderBy: { markedAt: 'desc' },
+          take: 25,
+          include: { staff: true, organization: true },
+        }),
+      ]);
+      // Resolve marker names for attendance entries
+      const markerIds = [...new Set(marks.map((m) => m.markedById).filter(Boolean))] as number[];
+      const markerUsers = markerIds.length
+        ? await prisma.user.findMany({ where: { id: { in: markerIds } } })
+        : [];
+      const markerMap = new Map(markerUsers.map((u) => [u.id, u]));
+      type Event = {
+        type: 'user' | 'org' | 'mark';
+        at: string;
+        title: string;
+        subtitle: string;
+        meta?: any;
+      };
+      const events: Event[] = [];
+      for (const u of users) {
+        const name =
+          [u.firstName, u.lastName].filter(Boolean).join(' ') ||
+          u.username ||
+          `id ${u.telegramId}`;
+        events.push({
+          type: 'user',
+          at: u.createdAt.toISOString(),
+          title: name,
+          subtitle: u.username ? `@${u.username}` : `id ${u.telegramId}`,
+          meta: { userId: u.id, role: u.role },
+        });
+      }
+      for (const o of orgs) {
+        const mgrName =
+          [o.manager.firstName, o.manager.lastName].filter(Boolean).join(' ') ||
+          o.manager.username ||
+          `id ${o.manager.telegramId}`;
+        events.push({
+          type: 'org',
+          at: o.createdAt.toISOString(),
+          title: o.name,
+          subtitle: mgrName,
+          meta: { orgId: o.id, managerId: o.manager.id },
+        });
+      }
+      for (const m of marks) {
+        const marker = m.markedById ? markerMap.get(m.markedById) : null;
+        const markerName = marker
+          ? [marker.firstName, marker.lastName].filter(Boolean).join(' ') ||
+            marker.username ||
+            `id ${marker.telegramId}`
+          : '?';
+        events.push({
+          type: 'mark',
+          at: m.markedAt.toISOString(),
+          title: `${m.staff.fullName} — ${m.status}`,
+          subtitle: `${m.organization.name} · ${markerName}`,
+          meta: {
+            orgId: m.organizationId,
+            staffId: m.staffId,
+            status: m.status,
+          },
+        });
+      }
+      events.sort((a, b) => (a.at < b.at ? 1 : -1));
+      return events.slice(0, 40);
+    },
+  );
+
+  // Organizations with no attendance recorded in the last 7 days.
+  app.get(
+    '/api/admin/inactive-orgs',
+    { preHandler: requireRole(Role.SUPER_ADMIN) },
+    async () => {
+      const orgs = await prisma.organization.findMany({
+        include: {
+          manager: true,
+          _count: { select: { staff: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      const sevenDaysAgo = DateTime.now()
+        .minus({ days: 7 })
+        .toFormat('yyyy-LL-dd');
+      const result = [];
+      for (const org of orgs) {
+        const recent = await prisma.attendance.findFirst({
+          where: { organizationId: org.id, date: { gte: sevenDaysAgo } },
+        });
+        if (recent) continue;
+        const last = await prisma.attendance.findFirst({
+          where: { organizationId: org.id },
+          orderBy: { markedAt: 'desc' },
+        });
+        result.push({
+          id: org.id,
+          name: org.name,
+          createdAt: org.createdAt.toISOString(),
+          totalStaff: org._count.staff,
+          lastMarkAt: last?.markedAt?.toISOString() || null,
+          manager: {
+            id: org.manager.id,
+            firstName: org.manager.firstName,
+            lastName: org.manager.lastName,
+            username: org.manager.username,
+          },
+        });
+      }
+      return result;
+    },
+  );
+
+  // Broadcast a plain-text message to every user in the system, optionally
+  // filtered by role. The bot sends sequentially with a small delay so we
+  // stay well under Telegram's 30 msg/sec rate limit; per-user errors
+  // (blocked bot, deleted account, etc.) are counted, not raised.
+  app.post(
+    '/api/admin/broadcast',
+    { preHandler: requireRole(Role.SUPER_ADMIN) },
+    async (req, reply) => {
+      const body = z
+        .object({
+          text: z.string().min(1).max(4000),
+          target: z
+            .enum(['ALL', 'MANAGER', 'ASSISTANT', 'STAFF', 'NONE'])
+            .default('ALL'),
+        })
+        .parse(req.body);
+      const where =
+        body.target === 'ALL' ? {} : { role: body.target as Role };
+      const users = await prisma.user.findMany({
+        where,
+        select: { id: true, telegramId: true },
+      });
+      let sent = 0;
+      let failed = 0;
+      for (const u of users) {
+        try {
+          await bot.telegram.sendMessage(String(u.telegramId), body.text);
+          sent++;
+        } catch {
+          failed++;
+        }
+        // ~25 messages per second to stay under the 30/sec limit
+        await new Promise((r) => setTimeout(r, 40));
+      }
+      return reply.send({ total: users.length, sent, failed });
     },
   );
 

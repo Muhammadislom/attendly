@@ -5,6 +5,12 @@ import Home from './pages/Home';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
 import AdminOrgs from './pages/AdminOrgs';
+import AdminOrgDetail from './pages/AdminOrgDetail';
+import AdminUserDetail from './pages/AdminUserDetail';
+import AdminToday from './pages/AdminToday';
+import AdminActivity from './pages/AdminActivity';
+import AdminInactive from './pages/AdminInactive';
+import AdminBroadcast from './pages/AdminBroadcast';
 import ManagerOrgs from './pages/ManagerOrgs';
 import ManagerOrgDetail from './pages/ManagerOrgDetail';
 import AssistantPick from './pages/AssistantPick';
@@ -94,7 +100,13 @@ export default function App() {
       <Route path="/" element={<Home me={me} reload={reload} />} />
       <Route path="/admin" element={<AdminDashboard me={me} />} />
       <Route path="/admin/users" element={<AdminUsers me={me} />} />
+      <Route path="/admin/users/:id" element={<AdminUserDetail me={me} />} />
       <Route path="/admin/orgs" element={<AdminOrgs me={me} />} />
+      <Route path="/admin/orgs/:id" element={<AdminOrgDetail me={me} />} />
+      <Route path="/admin/today" element={<AdminToday me={me} />} />
+      <Route path="/admin/activity" element={<AdminActivity me={me} />} />
+      <Route path="/admin/inactive" element={<AdminInactive me={me} />} />
+      <Route path="/admin/broadcast" element={<AdminBroadcast me={me} />} />
       <Route path="/manager" element={<ManagerOrgs me={me} />} />
       <Route path="/manager/orgs/:id" element={<ManagerOrgDetail me={me} />} />
       <Route path="/assistant" element={<AssistantPick me={me} />} />

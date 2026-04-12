@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, Me } from '../lib/api';
 import Layout from '../components/Layout';
 import { Card, Help } from '../components/Card';
@@ -91,7 +92,8 @@ export default function AdminOrgs({ me }: { me: Me }) {
 
       <div className="space-y-3">
         {filtered.map((o) => (
-          <Card key={o.id}>
+          <Link key={o.id} to={`/admin/orgs/${o.id}`}>
+          <Card>
             <div className="font-semibold truncate">{o.name}</div>
             <div className="text-xs text-tg-hint mt-1 truncate">
               {t('adminOrgs.manager', managerName(o.manager))}
@@ -105,6 +107,7 @@ export default function AdminOrgs({ me }: { me: Me }) {
               {pad(o.markEndHour)}:{pad(o.markEndMin)} · {o.timezone}
             </div>
           </Card>
+          </Link>
         ))}
       </div>
     </Layout>

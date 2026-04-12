@@ -120,6 +120,76 @@ const dict = {
     'adminOrgs.manager': 'Управляющий: {0}',
     'adminOrgs.noManagerName': 'без имени',
 
+    // admin org detail
+    'adminOrgDetail.readOnly': 'Только для чтения',
+    'adminOrgDetail.todaySummary': 'Сегодня',
+    'adminOrgDetail.present': 'Пришли',
+    'adminOrgDetail.late': 'Опоздали',
+    'adminOrgDetail.absent': 'Отсутств.',
+    'adminOrgDetail.unmarked': 'Не отмечены',
+    'adminOrgDetail.staffList': 'Сотрудники',
+    'adminOrgDetail.assistants': 'Ассистенты',
+    'adminOrgDetail.noStaff': 'Нет сотрудников',
+    'adminOrgDetail.noAssistants': 'Нет ассистентов',
+
+    // admin user detail
+    'adminUserDetail.managedOrgs': 'Управляет организациями',
+    'adminUserDetail.assistantIn': 'Ассистент в',
+    'adminUserDetail.staffIn': 'Сотрудник в',
+    'adminUserDetail.noLinks': 'Нет привязок к организациям',
+    'adminUserDetail.joined': 'Зарегистрирован: {0}',
+    'adminUserDetail.attendance': 'Последние посещения',
+
+    // admin today
+    'adminToday.title': 'Сегодня',
+    'adminToday.help.title': 'Что здесь видно',
+    'adminToday.help.body':
+      'Статус отметки за сегодня во всех организациях. Видно: окно открыто, закрыто или ещё не началось, и сколько сотрудников уже отмечено.',
+    'adminToday.before': 'Ещё не открыто',
+    'adminToday.open': 'Открыто',
+    'adminToday.after': 'Закрыто',
+    'adminToday.marked': '{0} из {1} отмечено',
+    'adminToday.allDone': 'Все отмечены',
+    'adminToday.noneYet': 'Никто не отмечен',
+    'adminToday.empty': 'Нет организаций',
+
+    // admin activity
+    'adminActivity.title': 'Лента событий',
+    'adminActivity.help.title': 'Что здесь видно',
+    'adminActivity.help.body':
+      'Последние события в системе: новые пользователи, новые организации, отметки посещаемости. Сортировано по времени, самые свежие сверху.',
+    'adminActivity.userEvent': 'Новый пользователь',
+    'adminActivity.orgEvent': 'Новая организация',
+    'adminActivity.markEvent': 'Отметка',
+    'adminActivity.empty': 'Событий пока нет',
+
+    // admin inactive
+    'adminInactive.title': 'Неактивные организации',
+    'adminInactive.help.title': 'Что это',
+    'adminInactive.help.body':
+      'Организации, в которых не было ни одной отметки за последние 7 дней. Возможно, стоит связаться с управляющим.',
+    'adminInactive.lastMark': 'Последняя отметка: {0}',
+    'adminInactive.never': 'Отметок не было',
+    'adminInactive.empty': 'Все организации активны',
+
+    // admin broadcast
+    'adminBroadcast.title': 'Рассылка',
+    'adminBroadcast.help.title': 'Как работает рассылка',
+    'adminBroadcast.help.body':
+      'Отправляет текстовое сообщение через бота всем пользователям (или по роли). Отправить обратно нельзя — проверьте текст!',
+    'adminBroadcast.text': 'Текст сообщения',
+    'adminBroadcast.placeholder': 'Текст рассылки...',
+    'adminBroadcast.target': 'Кому',
+    'adminBroadcast.targetAll': 'Всем',
+    'adminBroadcast.send': 'Отправить',
+    'adminBroadcast.sending': 'Отправляется...',
+    'adminBroadcast.confirm':
+      'Вы уверены? Сообщение будет отправлено и его нельзя будет отменить.',
+    'adminBroadcast.sent': 'Отправлено: {0}',
+    'adminBroadcast.failed': 'Ошибок: {0}',
+    'adminBroadcast.done': 'Рассылка завершена',
+    'adminBroadcast.enterText': 'Введите текст',
+
     // manager orgs list
     'manager.title': 'Мои организации',
     'manager.addOrg': '+ Добавить организацию',
@@ -353,6 +423,76 @@ const dict = {
     'adminOrgs.search': 'Nom yoki menejer bo‘yicha qidiruv...',
     'adminOrgs.manager': 'Menejer: {0}',
     'adminOrgs.noManagerName': 'ismsiz',
+
+    // admin org detail
+    'adminOrgDetail.readOnly': 'Faqat o\'qish',
+    'adminOrgDetail.todaySummary': 'Bugun',
+    'adminOrgDetail.present': 'Keldi',
+    'adminOrgDetail.late': 'Kechikdi',
+    'adminOrgDetail.absent': 'Kelmadi',
+    'adminOrgDetail.unmarked': 'Belgilanmagan',
+    'adminOrgDetail.staffList': 'Xodimlar',
+    'adminOrgDetail.assistants': 'Yordamchilar',
+    'adminOrgDetail.noStaff': 'Xodimlar yo\'q',
+    'adminOrgDetail.noAssistants': 'Yordamchilar yo\'q',
+
+    // admin user detail
+    'adminUserDetail.managedOrgs': 'Boshqaradigan tashkilotlar',
+    'adminUserDetail.assistantIn': 'Yordamchi sifatida',
+    'adminUserDetail.staffIn': 'Xodim sifatida',
+    'adminUserDetail.noLinks': 'Tashkilotlarga bog\'lanmagan',
+    'adminUserDetail.joined': 'Ro\'yxatdan o\'tgan: {0}',
+    'adminUserDetail.attendance': 'Oxirgi davomatlar',
+
+    // admin today
+    'adminToday.title': 'Bugun',
+    'adminToday.help.title': 'Bu yerda nima ko\'rinadi',
+    'adminToday.help.body':
+      'Barcha tashkilotlarda bugungi belgilash holati. Ko\'rinadi: oyna ochiq, yopiq yoki hali boshlanmagan, va qancha xodim belgilangan.',
+    'adminToday.before': 'Hali ochilmagan',
+    'adminToday.open': 'Ochiq',
+    'adminToday.after': 'Yopilgan',
+    'adminToday.marked': '{0} dan {1} belgilangan',
+    'adminToday.allDone': 'Hammasi belgilangan',
+    'adminToday.noneYet': 'Hech kim belgilanmagan',
+    'adminToday.empty': 'Tashkilotlar yo\'q',
+
+    // admin activity
+    'adminActivity.title': 'Voqealar lentasi',
+    'adminActivity.help.title': 'Bu yerda nima ko\'rinadi',
+    'adminActivity.help.body':
+      'Tizimdagi oxirgi voqealar: yangi foydalanuvchilar, yangi tashkilotlar, davomat belgilari. Vaqt bo\'yicha tartiblangan, eng yangisi tepada.',
+    'adminActivity.userEvent': 'Yangi foydalanuvchi',
+    'adminActivity.orgEvent': 'Yangi tashkilot',
+    'adminActivity.markEvent': 'Belgilash',
+    'adminActivity.empty': 'Hali voqealar yo\'q',
+
+    // admin inactive
+    'adminInactive.title': 'Nofaol tashkilotlar',
+    'adminInactive.help.title': 'Bu nima',
+    'adminInactive.help.body':
+      'Oxirgi 7 kunda hech qanday belgilash bo\'lmagan tashkilotlar. Ehtimol, menejer bilan bog\'lanish kerak.',
+    'adminInactive.lastMark': 'Oxirgi belgilash: {0}',
+    'adminInactive.never': 'Belgilash bo\'lmagan',
+    'adminInactive.empty': 'Barcha tashkilotlar faol',
+
+    // admin broadcast
+    'adminBroadcast.title': 'Xabar tarqatish',
+    'adminBroadcast.help.title': 'Xabar tarqatish qanday ishlaydi',
+    'adminBroadcast.help.body':
+      'Bot orqali barcha foydalanuvchilarga (yoki rolga ko\'ra) matnli xabar yuboradi. Qaytarib bo\'lmaydi — matnni tekshiring!',
+    'adminBroadcast.text': 'Xabar matni',
+    'adminBroadcast.placeholder': 'Xabar matni...',
+    'adminBroadcast.target': 'Kimga',
+    'adminBroadcast.targetAll': 'Hammaga',
+    'adminBroadcast.send': 'Yuborish',
+    'adminBroadcast.sending': 'Yuborilmoqda...',
+    'adminBroadcast.confirm':
+      'Ishonchingiz komilmi? Xabar yuboriladi va bekor qilib bo\'lmaydi.',
+    'adminBroadcast.sent': 'Yuborildi: {0}',
+    'adminBroadcast.failed': 'Xatolar: {0}',
+    'adminBroadcast.done': 'Tarqatish tugadi',
+    'adminBroadcast.enterText': 'Matnni kiriting',
 
     // manager orgs list
     'manager.title': 'Mening tashkilotlarim',

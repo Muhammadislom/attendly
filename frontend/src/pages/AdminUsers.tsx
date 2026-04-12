@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, Me, Role } from '../lib/api';
 import Layout from '../components/Layout';
 import { Card, Help } from '../components/Card';
@@ -101,7 +102,7 @@ export default function AdminUsers({ me }: { me: Me }) {
           return (
             <Card key={u.id}>
               <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
+                <Link to={`/admin/users/${u.id}`} className="min-w-0 flex-1">
                   <div className="font-semibold truncate">
                     {name || t('admin.noName')}
                   </div>
@@ -125,7 +126,7 @@ export default function AdminUsers({ me }: { me: Me }) {
                       {u.role}
                     </span>
                   </div>
-                </div>
+                </Link>
                 {u.role === 'ASSISTANT' ? (
                   <div className="text-[11px] text-tg-hint text-right max-w-[140px] leading-snug">
                     {t('admin.cantPromoteAssistant')}
