@@ -652,6 +652,38 @@ export async function registerRoutes(app: FastifyInstance) {
     },
   );
 
+  app.patch(
+    '/api/manager/staff/:staffId',
+    { preHandler: requireRole(Role.MANAGER) },
+    async (req, reply) => {
+      const { staffId } = z.object({ staffId: z.string() }).parse(req.params);
+      const body = z
+        .object({
+          fullName: z.string().min(1).optional(),
+          position: z.string().nullable().optional(),
+          phone: z.string().nullable().optional(),
+        })
+        .parse(req.body);
+      const staff = await prisma.staff.findUnique({
+        where: { id: Number(staffId) },
+        include: { organization: true },
+      });
+      if (!staff || staff.organization.managerId !== req.user!.id)
+        return reply.code(404).send({ error: 'Not found' });
+      const updated = await prisma.staff.update({
+        where: { id: staff.id },
+        data: {
+          ...(body.fullName !== undefined ? { fullName: body.fullName } : {}),
+          ...(body.position !== undefined
+            ? { position: body.position || null }
+            : {}),
+          ...(body.phone !== undefined ? { phone: body.phone || null } : {}),
+        },
+      });
+      return clean(updated);
+    },
+  );
+
   app.delete(
     '/api/manager/staff/:staffId',
     { preHandler: requireRole(Role.MANAGER) },

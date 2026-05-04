@@ -115,6 +115,11 @@ function StaffTab({ org, reload }: { org: Org; reload: () => Promise<void> }) {
   const [phone, setPhone] = useState('');
   const [withInvite, setWithInvite] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPos, setEditPos] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
 
   const submit = async () => {
     if (!fullName.trim()) return showAlert(t('staffTab.enterFullName'));
@@ -163,6 +168,38 @@ function StaffTab({ org, reload }: { org: Org; reload: () => Promise<void> }) {
       await reload();
     } catch (e: any) {
       showAlert(e.message);
+    }
+  };
+
+  const startEdit = (s: Org['staff'][number]) => {
+    setEditingId(s.id);
+    setEditName(s.fullName);
+    setEditPos(s.position ?? '');
+    setEditPhone(s.phone ?? '');
+  };
+
+  const cancelEdit = () => setEditingId(null);
+
+  const saveEdit = async (staffId: number) => {
+    if (!editName.trim()) return showAlert(t('staffTab.enterFullName'));
+    setEditSaving(true);
+    try {
+      await api(`/api/manager/staff/${staffId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          fullName: editName.trim(),
+          position: editPos.trim() || null,
+          phone: editPhone.trim() || null,
+        }),
+      });
+      notify('success');
+      setEditingId(null);
+      await reload();
+    } catch (e: any) {
+      showAlert(e.message);
+      notify('error');
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -231,55 +268,91 @@ function StaffTab({ org, reload }: { org: Org; reload: () => Promise<void> }) {
         </div>
       )}
       <div className="space-y-2">
-        {org.staff.map((s) => (
-          <Card key={s.id}>
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <div className="font-semibold truncate">{s.fullName}</div>
-                {s.position && (
-                  <div className="text-xs text-tg-hint truncate">
-                    {s.position}
-                  </div>
-                )}
-                {s.phone && (
-                  <div className="text-xs text-tg-hint">{s.phone}</div>
-                )}
-                <div className="text-xs mt-1">
-                  {s.userId ? (
-                    <span className="text-green-500">
-                      {t('staffTab.linked')}
-                    </span>
-                  ) : s.inviteCode ? (
-                    <span className="text-blue-500">
-                      {t('staffTab.sendCode')}{' '}
-                      <code>link:{s.inviteCode}</code>
-                    </span>
-                  ) : (
-                    <span className="text-tg-hint">
-                      {t('common.notLinked')}
-                    </span>
+        {org.staff.map((s) =>
+          editingId === s.id ? (
+            <Card key={s.id}>
+              <Input
+                label={t('common.fullName')}
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+              />
+              <Input
+                label={t('common.position')}
+                value={editPos}
+                onChange={(e) => setEditPos(e.target.value)}
+                hint={t('common.optional')}
+              />
+              <Input
+                label={t('common.phone')}
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                hint={t('common.optional')}
+              />
+              <div className="flex gap-2">
+                <Button onClick={cancelEdit} variant="secondary">
+                  {t('common.cancel')}
+                </Button>
+                <Button onClick={() => saveEdit(s.id)} disabled={editSaving}>
+                  {editSaving ? t('common.saving') : t('common.save')}
+                </Button>
+              </div>
+            </Card>
+          ) : (
+            <Card key={s.id}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold truncate">{s.fullName}</div>
+                  {s.position && (
+                    <div className="text-xs text-tg-hint truncate">
+                      {s.position}
+                    </div>
                   )}
+                  {s.phone && (
+                    <div className="text-xs text-tg-hint">{s.phone}</div>
+                  )}
+                  <div className="text-xs mt-1">
+                    {s.userId ? (
+                      <span className="text-green-500">
+                        {t('staffTab.linked')}
+                      </span>
+                    ) : s.inviteCode ? (
+                      <span className="text-blue-500">
+                        {t('staffTab.sendCode')}{' '}
+                        <code>link:{s.inviteCode}</code>
+                      </span>
+                    ) : (
+                      <span className="text-tg-hint">
+                        {t('common.notLinked')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  {!s.userId && !s.inviteCode && (
+                    <button
+                      onClick={() => genInvite(s.id)}
+                      className="text-xs px-3 py-2 rounded-xl bg-tg-button text-tg-buttonText font-semibold"
+                    >
+                      {t('common.code')}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => startEdit(s)}
+                    className="text-xs px-3 py-2 rounded-xl bg-tg-bg ring-1 ring-white/10 text-tg-text font-semibold"
+                  >
+                    {t('common.edit')}
+                  </button>
+                  <button
+                    onClick={() => remove(s.id)}
+                    className="text-xs px-3 py-2 rounded-xl bg-red-500 text-white font-semibold"
+                  >
+                    {t('common.delete')}
+                  </button>
                 </div>
               </div>
-              <div className="flex flex-col gap-1">
-                {!s.userId && !s.inviteCode && (
-                  <button
-                    onClick={() => genInvite(s.id)}
-                    className="text-xs px-3 py-2 rounded-xl bg-tg-button text-tg-buttonText font-semibold"
-                  >
-                    {t('common.code')}
-                  </button>
-                )}
-                <button
-                  onClick={() => remove(s.id)}
-                  className="text-xs px-3 py-2 rounded-xl bg-red-500 text-white font-semibold"
-                >
-                  {t('common.delete')}
-                </button>
-              </div>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          ),
+        )}
       </div>
     </div>
   );
