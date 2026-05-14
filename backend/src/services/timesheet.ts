@@ -22,10 +22,17 @@ const THIN: Partial<ExcelJS.Borders> = {
 
 const UND = '_______';
 
-function statusLetter(s: AttendanceStatus | undefined): string {
-  if (s === 'PRESENT' || s === 'LATE') return 'Я';
-  if (s === 'ABSENT') return 'Н';
-  return '';
+// Cell value for a day in the T-13 grid:
+//   PRESENT / LATE  → hours worked that day (= workHoursPerDay)
+//   ABSENT          → 0
+//   no record       → null (empty cell)
+function statusValue(
+  s: AttendanceStatus | undefined,
+  workHours: number,
+): number | null {
+  if (s === 'PRESENT' || s === 'LATE') return workHours;
+  if (s === 'ABSENT') return 0;
+  return null;
 }
 
 function slug(s: string): string {
@@ -150,12 +157,12 @@ export async function generateTimesheetXlsx(
     for (const iso of days) {
       const day = Number(iso.slice(-2));
       const cell = ws.getCell(r, 5 + (day - 1));
-      const letter = statusLetter(map.get(`${s.id}::${iso}`));
-      cell.value = letter;
+      const value = statusValue(map.get(`${s.id}::${iso}`), workHours);
+      cell.value = value;
       cell.alignment = { horizontal: 'center' };
       cell.font = FONT_CELL;
       cell.border = THIN;
-      if (letter === 'Я') presentCount++;
+      if (value === workHours) presentCount++;
     }
     for (let d = 1; d <= 31; d++) {
       if (!inPeriod.has(d)) ws.getCell(r, 5 + (d - 1)).border = THIN;
