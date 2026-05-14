@@ -50,6 +50,15 @@ model Organization {
   createdAt     DateTime @default(now())
   lastReportSent DateTime?
 
+  // T-13 timesheet header fields. All nullable — older orgs created before the
+  // feature stay valid; export falls back to underscores when a field is null.
+  legalEntityName  String?
+  departmentName   String?
+  directorName     String?
+  departmentHead   String?
+  documentNumber   String?
+  workHoursPerDay  Int?    @default(8)
+
   assistants Assistant[]
   staff      Staff[]
   attendance Attendance[]
@@ -94,4 +103,5 @@ model Attendance {
   markedAt       DateTime         @default(now())
 
   @@unique([staffId, date])
+  @@index([organizationId, date])
 }

@@ -29,6 +29,7 @@ const dict = {
     'link.notFound': 'Код не найден или уже использован.',
     'link.alreadyLinked': 'Этот профиль уже привязан.',
     'link.success': 'Аккаунт успешно привязан к профилю: {0}',
+    'tabel.caption': '📋 Табель Т-13 за {0} — {1}',
   },
   uz: {
     'start.superAdmin':
@@ -51,6 +52,7 @@ const dict = {
     'link.notFound': 'Kod topilmadi yoki allaqachon ishlatilgan.',
     'link.alreadyLinked': 'Bu profil allaqachon bog‘langan.',
     'link.success': 'Akkaunt profilga muvaffaqiyatli bog‘landi: {0}',
+    'tabel.caption': '📋 T-13 tabel: {0} — {1}',
   },
 } as const;
 

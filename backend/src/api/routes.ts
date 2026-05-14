@@ -7,6 +7,7 @@ import { authMiddleware, requireRole } from './auth.js';
 import { clean } from './serialize.js';
 import { bot } from '../bot/index.js';
 import { Role, AttendanceStatus } from '@prisma/client';
+import { sendTimesheetToUser } from '../services/timesheet-send.js';
 
 function todayIso(tz: string) {
   return DateTime.now().setZone(tz).toFormat('yyyy-LL-dd');
@@ -23,6 +24,21 @@ function validateWindow(
   if (endHour * 60 + endMin <= startHour * 60 + startMin) {
     return 'Время окончания должно быть позже времени начала';
   }
+  return null;
+}
+
+// Validates a T-13 timesheet export period. Returns an error string or null.
+// Limited to a single calendar month because the T-13 form lays days 1..31
+// in a single row — a cross-month period would collide on shared day numbers.
+function validateExportPeriod(from: string, to: string): string | null {
+  const f = DateTime.fromISO(from);
+  const t = DateTime.fromISO(to);
+  if (!f.isValid || !t.isValid) return 'Неверный формат даты';
+  if (f > t) return 'Дата начала должна быть не позже даты окончания';
+  if (t.diff(f, 'days').days + 1 > 31)
+    return 'Период не должен превышать 31 день';
+  if (f.month !== t.month || f.year !== t.year)
+    return 'Период должен быть в пределах одного календарного месяца';
   return null;
 }
 
@@ -563,6 +579,14 @@ export async function registerRoutes(app: FastifyInstance) {
           markEndHour: z.number().int().min(0).max(23).optional(),
           markEndMin: z.number().int().min(0).max(59).optional(),
           timezone: z.string().optional(),
+          // T-13 timesheet header fields. All optional so older WebApp bundles
+          // that don't know about them stay backward-compatible.
+          legalEntityName: z.string().nullable().optional(),
+          departmentName: z.string().nullable().optional(),
+          directorName: z.string().nullable().optional(),
+          departmentHead: z.string().nullable().optional(),
+          documentNumber: z.string().nullable().optional(),
+          workHoursPerDay: z.number().int().min(1).max(24).optional(),
         })
         .parse(req.body);
       const org = await prisma.organization.findFirst({
@@ -920,6 +944,82 @@ export async function registerRoutes(app: FastifyInstance) {
           status: map.get(s.id) || 'ABSENT',
         })),
       });
+    },
+  );
+
+  // ---------- T-13 timesheet export ----------
+  // Generates a unified-form T-13 xlsx for the given period and delivers it
+  // as a Telegram document to the requester's private chat. The frontend gets
+  // only a small JSON ack; the file never round-trips through the WebApp.
+  app.post(
+    '/api/manager/orgs/:id/export-timesheet',
+    { preHandler: requireRole(Role.MANAGER) },
+    async (req, reply) => {
+      const { id } = z.object({ id: z.string() }).parse(req.params);
+      const body = z
+        .object({
+          from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        })
+        .parse(req.body);
+      const err = validateExportPeriod(body.from, body.to);
+      if (err) return reply.code(400).send({ error: err });
+      const org = await prisma.organization.findFirst({
+        where: { id: Number(id), managerId: req.user!.id },
+      });
+      if (!org) return reply.code(404).send({ error: 'Not found' });
+      try {
+        await sendTimesheetToUser({
+          orgId: org.id,
+          from: body.from,
+          to: body.to,
+          telegramId: req.user!.telegramId,
+          lang: 'ru',
+        });
+        return { ok: true };
+      } catch (e: any) {
+        req.log.error({ err: e }, 'timesheet export failed');
+        return reply.code(502).send({
+          error:
+            'Не удалось отправить файл в Telegram. Откройте бота и нажмите /start, затем повторите.',
+        });
+      }
+    },
+  );
+
+  app.post(
+    '/api/admin/orgs/:id/export-timesheet',
+    { preHandler: requireRole(Role.SUPER_ADMIN) },
+    async (req, reply) => {
+      const { id } = z.object({ id: z.string() }).parse(req.params);
+      const body = z
+        .object({
+          from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        })
+        .parse(req.body);
+      const err = validateExportPeriod(body.from, body.to);
+      if (err) return reply.code(400).send({ error: err });
+      const org = await prisma.organization.findUnique({
+        where: { id: Number(id) },
+      });
+      if (!org) return reply.code(404).send({ error: 'Not found' });
+      try {
+        await sendTimesheetToUser({
+          orgId: org.id,
+          from: body.from,
+          to: body.to,
+          telegramId: req.user!.telegramId,
+          lang: 'ru',
+        });
+        return { ok: true };
+      } catch (e: any) {
+        req.log.error({ err: e }, 'admin timesheet export failed');
+        return reply.code(502).send({
+          error:
+            'Не удалось отправить файл в Telegram. Откройте бота и нажмите /start, затем повторите.',
+        });
+      }
     },
   );
 }

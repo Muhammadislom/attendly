@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api, Me } from '../lib/api';
 import Layout from '../components/Layout';
-import { Card } from '../components/Card';
+import { Card, Button, Help } from '../components/Card';
 import Spinner from '../components/Spinner';
+import { notify, showAlert } from '../lib/telegram';
 import { useT } from '../lib/i18n';
 
 type Status = 'PRESENT' | 'LATE' | 'ABSENT' | null;
@@ -121,6 +122,8 @@ export default function AdminOrgDetail({ me }: { me: Me }) {
         </div>
       </Card>
 
+      <ExportBlock orgId={org.id} />
+
       {/* Today summary */}
       <Card className="mb-3">
         <div className="font-semibold mb-2">{t('adminOrgDetail.todaySummary')}</div>
@@ -186,5 +189,103 @@ export default function AdminOrgDetail({ me }: { me: Me }) {
         </div>
       )}
     </Layout>
+  );
+}
+
+function firstOfMonth(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  return `${y}-${String(m).padStart(2, '0')}-01`;
+}
+
+function todayIso(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  const d = now.getDate();
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+function ExportBlock({ orgId }: { orgId: number }) {
+  const { t } = useT();
+  const [from, setFrom] = useState(firstOfMonth());
+  const [to, setTo] = useState(todayIso());
+  const [sending, setSending] = useState(false);
+
+  const validate = (): string | null => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+      return t('export.errInvalidPeriod');
+    }
+    if (from > to) return t('export.errInvalidPeriod');
+    const f = new Date(from + 'T00:00:00Z');
+    const tt = new Date(to + 'T00:00:00Z');
+    const days = Math.round((tt.getTime() - f.getTime()) / 86400000) + 1;
+    if (days > 31) return t('export.errPeriodTooLong');
+    if (
+      f.getUTCMonth() !== tt.getUTCMonth() ||
+      f.getUTCFullYear() !== tt.getUTCFullYear()
+    ) {
+      return t('export.errCrossMonth');
+    }
+    return null;
+  };
+
+  const submit = async () => {
+    const err = validate();
+    if (err) return showAlert(err);
+    setSending(true);
+    try {
+      await api(`/api/admin/orgs/${orgId}/export-timesheet`, {
+        method: 'POST',
+        body: JSON.stringify({ from, to }),
+      });
+      notify('success');
+      showAlert(t('export.sentSuccess'));
+    } catch (e: any) {
+      showAlert(e.message);
+      notify('error');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <>
+      <Help title={t('export.help.title')}>
+        <p>{t('export.help.body1')}</p>
+        <p>{t('export.help.body2')}</p>
+      </Help>
+      <Card className="mb-3">
+        <div className="font-semibold mb-2">{t('export.title')}</div>
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <label className="block">
+            <div className="text-xs text-tg-hint mb-1 px-1">
+              {t('export.from')}
+            </div>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="w-full rounded-2xl px-3 py-2 bg-tg-bg text-tg-text ring-1 ring-white/10 outline-none focus:ring-2 focus:ring-tg-button transition"
+            />
+          </label>
+          <label className="block">
+            <div className="text-xs text-tg-hint mb-1 px-1">
+              {t('export.to')}
+            </div>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="w-full rounded-2xl px-3 py-2 bg-tg-bg text-tg-text ring-1 ring-white/10 outline-none focus:ring-2 focus:ring-tg-button transition"
+            />
+          </label>
+        </div>
+        <Button onClick={submit} disabled={sending}>
+          {sending ? t('export.sending') : t('export.button')}
+        </Button>
+      </Card>
+    </>
   );
 }

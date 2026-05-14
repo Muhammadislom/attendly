@@ -35,6 +35,12 @@ type Org = {
   markEndHour: number;
   markEndMin: number;
   timezone: string;
+  legalEntityName: string | null;
+  departmentName: string | null;
+  directorName: string | null;
+  departmentHead: string | null;
+  documentNumber: string | null;
+  workHoursPerDay: number | null;
   staff: Staff[];
   assistants: Assistant[];
 };
@@ -47,9 +53,9 @@ export default function ManagerOrgDetail({ me: _me }: { me: Me }) {
   const { t } = useT();
   const { id } = useParams<{ id: string }>();
   const [org, setOrg] = useState<Org | null>(null);
-  const [tab, setTab] = useState<'staff' | 'assistants' | 'settings' | 'report'>(
-    'staff',
-  );
+  const [tab, setTab] = useState<
+    'staff' | 'assistants' | 'settings' | 'report' | 'export'
+  >('staff');
 
   const load = async () => {
     const data = await api<Org>(`/api/manager/orgs/${id}`);
@@ -83,6 +89,7 @@ export default function ManagerOrgDetail({ me: _me }: { me: Me }) {
             ['staff', t('orgDetail.tab.staff')],
             ['assistants', t('orgDetail.tab.assistants')],
             ['report', t('orgDetail.tab.report')],
+            ['export', t('orgDetail.tab.export')],
             ['settings', t('orgDetail.tab.settings')],
           ] as const
         ).map(([key, label]) => (
@@ -103,6 +110,7 @@ export default function ManagerOrgDetail({ me: _me }: { me: Me }) {
       {tab === 'assistants' && <AssistantsTab org={org} reload={load} />}
       {tab === 'settings' && <SettingsTab org={org} reload={load} />}
       {tab === 'report' && <ReportTab org={org} />}
+      {tab === 'export' && <ExportTab org={org} />}
     </Layout>
   );
 }
@@ -468,6 +476,12 @@ function SettingsTab({
   const [endTime, setEndTime] = useState(
     `${pad(org.markEndHour)}:${pad(org.markEndMin)}`,
   );
+  const [legalEntity, setLegalEntity] = useState(org.legalEntityName ?? '');
+  const [department, setDepartment] = useState(org.departmentName ?? '');
+  const [director, setDirector] = useState(org.directorName ?? '');
+  const [head, setHead] = useState(org.departmentHead ?? '');
+  const [docNumber, setDocNumber] = useState(org.documentNumber ?? '');
+  const [workHours, setWorkHours] = useState(String(org.workHoursPerDay ?? 8));
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -475,6 +489,10 @@ function SettingsTab({
     const [eh, em] = endTime.split(':').map(Number);
     if (eh * 60 + em <= sh * 60 + sm) {
       return showAlert(t('manager.invalidWindow'));
+    }
+    const wh = Number(workHours);
+    if (!Number.isInteger(wh) || wh < 1 || wh > 24) {
+      return showAlert(t('settings.workHoursPerDay'));
     }
     setSaving(true);
     try {
@@ -486,6 +504,12 @@ function SettingsTab({
           markStartMin: sm,
           markEndHour: eh,
           markEndMin: em,
+          legalEntityName: legalEntity.trim() || null,
+          departmentName: department.trim() || null,
+          directorName: director.trim() || null,
+          departmentHead: head.trim() || null,
+          documentNumber: docNumber.trim() || null,
+          workHoursPerDay: wh,
         }),
       });
       notify('success');
@@ -545,11 +569,154 @@ function SettingsTab({
             />
           </label>
         </div>
+        <Help title={t('settings.t13.help.title')}>
+          <p>{t('settings.t13.help.body1')}</p>
+        </Help>
+        <Input
+          label={t('settings.t13.legalEntity')}
+          value={legalEntity}
+          onChange={(e) => setLegalEntity(e.target.value)}
+          placeholder={t('settings.t13.legalEntityPh')}
+          hint={t('common.optional')}
+        />
+        <Input
+          label={t('settings.t13.department')}
+          value={department}
+          onChange={(e) => setDepartment(e.target.value)}
+          placeholder={t('settings.t13.departmentPh')}
+          hint={t('common.optional')}
+        />
+        <Input
+          label={t('settings.t13.director')}
+          value={director}
+          onChange={(e) => setDirector(e.target.value)}
+          placeholder={t('settings.t13.directorPh')}
+          hint={t('common.optional')}
+        />
+        <Input
+          label={t('settings.t13.head')}
+          value={head}
+          onChange={(e) => setHead(e.target.value)}
+          placeholder={t('settings.t13.headPh')}
+          hint={t('common.optional')}
+        />
+        <Input
+          label={t('settings.t13.docNumber')}
+          value={docNumber}
+          onChange={(e) => setDocNumber(e.target.value)}
+          hint={t('common.optional')}
+        />
+        <Input
+          label={t('settings.workHoursPerDay')}
+          type="number"
+          value={workHours}
+          onChange={(e) => setWorkHours(e.target.value)}
+        />
         <Button onClick={save} disabled={saving} className="mb-2">
           {saving ? t('common.saving') : t('common.save')}
         </Button>
         <Button onClick={remove} variant="danger">
           {t('settingsTab.deleteOrg')}
+        </Button>
+      </Card>
+    </div>
+  );
+}
+
+function firstOfMonth(): string {
+  // Month-start in the browser's local clock; backend re-validates the
+  // period independently against the org timezone, so cross-midnight edge
+  // cases don't matter here.
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  return `${y}-${String(m).padStart(2, '0')}-01`;
+}
+
+function todayIso(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  const d = now.getDate();
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+function ExportTab({ org }: { org: Org }) {
+  const { t } = useT();
+  const [from, setFrom] = useState(firstOfMonth());
+  const [to, setTo] = useState(todayIso());
+  const [sending, setSending] = useState(false);
+
+  const validate = (): string | null => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+      return t('export.errInvalidPeriod');
+    }
+    if (from > to) return t('export.errInvalidPeriod');
+    const f = new Date(from + 'T00:00:00Z');
+    const tt = new Date(to + 'T00:00:00Z');
+    const days = Math.round((tt.getTime() - f.getTime()) / 86400000) + 1;
+    if (days > 31) return t('export.errPeriodTooLong');
+    if (
+      f.getUTCMonth() !== tt.getUTCMonth() ||
+      f.getUTCFullYear() !== tt.getUTCFullYear()
+    ) {
+      return t('export.errCrossMonth');
+    }
+    return null;
+  };
+
+  const submit = async () => {
+    const err = validate();
+    if (err) return showAlert(err);
+    setSending(true);
+    try {
+      await api(`/api/manager/orgs/${org.id}/export-timesheet`, {
+        method: 'POST',
+        body: JSON.stringify({ from, to }),
+      });
+      notify('success');
+      showAlert(t('export.sentSuccess'));
+    } catch (e: any) {
+      showAlert(e.message);
+      notify('error');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div>
+      <Help title={t('export.help.title')}>
+        <p>{t('export.help.body1')}</p>
+        <p>{t('export.help.body2')}</p>
+      </Help>
+      <Card>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <label className="block">
+            <div className="text-sm font-medium mb-1.5 px-1">
+              {t('export.from')}
+            </div>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="w-full rounded-2xl px-4 py-3 bg-tg-bg text-tg-text ring-1 ring-white/10 outline-none focus:ring-2 focus:ring-tg-button transition"
+            />
+          </label>
+          <label className="block">
+            <div className="text-sm font-medium mb-1.5 px-1">
+              {t('export.to')}
+            </div>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="w-full rounded-2xl px-4 py-3 bg-tg-bg text-tg-text ring-1 ring-white/10 outline-none focus:ring-2 focus:ring-tg-button transition"
+            />
+          </label>
+        </div>
+        <Button onClick={submit} disabled={sending}>
+          {sending ? t('export.sending') : t('export.button')}
         </Button>
       </Card>
     </div>

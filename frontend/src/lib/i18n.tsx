@@ -217,6 +217,7 @@ const dict = {
     'orgDetail.tab.staff': '👥 Персонал',
     'orgDetail.tab.assistants': '🧑‍💼 Ассистенты',
     'orgDetail.tab.report': '📊 Отчёт',
+    'orgDetail.tab.export': '📤 Экспорт',
     'orgDetail.tab.settings': '⚙️ Настройки',
 
     // staff tab
@@ -275,6 +276,39 @@ const dict = {
     'report.present': 'Пришли',
     'report.late': 'Опоздали',
     'report.absent': 'Отсутств.',
+
+    // export tab (T-13)
+    'export.title': 'Экспорт табеля Т-13',
+    'export.from': 'Период с',
+    'export.to': 'Период по',
+    'export.button': 'Скачать в Telegram',
+    'export.sending': 'Отправка...',
+    'export.sentSuccess': 'Файл отправлен вам в личку бота',
+    'export.errInvalidPeriod':
+      'Дата начала должна быть не позже даты окончания',
+    'export.errPeriodTooLong': 'Период не должен превышать 31 день',
+    'export.errCrossMonth':
+      'Период должен быть в пределах одного календарного месяца',
+    'export.help.title': 'Что такое табель Т-13?',
+    'export.help.body1':
+      'Унифицированная форма Т-13 — табель учёта рабочего времени. Подходит для сдачи в бухгалтерию: Я — явка, Н — неявка, пусто — нет данных.',
+    'export.help.body2':
+      'Файл уйдёт вам в личку бота. Шапку (директор, подразделение и т.п.) заполните во вкладке «Настройки» — иначе там будут подчёркивания для подписи от руки.',
+
+    // T-13 settings group (inside SettingsTab)
+    'settings.t13.help.title': 'Шапка табеля Т-13',
+    'settings.t13.help.body1':
+      'Эти поля попадут в шапку Excel-файла при экспорте. Если оставить пустыми — будут подчёркивания для ручной подписи.',
+    'settings.t13.legalEntity': 'Юр. лицо (без ООО/ИП)',
+    'settings.t13.legalEntityPh': 'RADIKS',
+    'settings.t13.department': 'Подразделение',
+    'settings.t13.departmentPh': 'Ампульный цех',
+    'settings.t13.director': 'Директор юр. лица',
+    'settings.t13.directorPh': 'А.К.Касимов',
+    'settings.t13.head': 'Руководитель подразделения',
+    'settings.t13.headPh': 'Сарымсаков А.А.',
+    'settings.t13.docNumber': 'Номер документа',
+    'settings.workHoursPerDay': 'Часов в смене',
 
     // assistant pick
     'assistantPick.title': 'Отметить посещение',
@@ -522,6 +556,7 @@ const dict = {
     'orgDetail.tab.staff': '👥 Xodimlar',
     'orgDetail.tab.assistants': '🧑‍💼 Yordamchilar',
     'orgDetail.tab.report': '📊 Hisobot',
+    'orgDetail.tab.export': '📤 Eksport',
     'orgDetail.tab.settings': '⚙️ Sozlamalar',
 
     // staff tab
@@ -581,6 +616,38 @@ const dict = {
     'report.present': 'Keldi',
     'report.late': 'Kechikdi',
     'report.absent': 'Kelmadi',
+
+    // export tab (T-13)
+    'export.title': 'T-13 tabel eksporti',
+    'export.from': 'Davr boshi',
+    'export.to': 'Davr oxiri',
+    'export.button': 'Telegramga yuborish',
+    'export.sending': 'Yuborilmoqda...',
+    'export.sentSuccess': 'Fayl shaxsiy chatga yuborildi',
+    'export.errInvalidPeriod':
+      'Boshlanish sanasi tugash sanasidan keyin bo‘lmasligi kerak',
+    'export.errPeriodTooLong': 'Davr 31 kundan oshmasligi kerak',
+    'export.errCrossMonth': 'Davr bitta kalendar oy ichida bo‘lishi kerak',
+    'export.help.title': 'T-13 tabel nima?',
+    'export.help.body1':
+      'T-13 — ish vaqtini hisobga olish tabeli. Buxgalteriya uchun mos: Я — kelgan, Н — kelmagan, bo‘sh — ma’lumot yo‘q.',
+    'export.help.body2':
+      'Fayl shaxsiy chatga keladi. Sarlavhani (direktor, bo‘lim va h.k.) «Sozlamalar» bo‘limida to‘ldiring — aks holda qo‘l bilan imzo qo‘yish uchun chiziqlar qoladi.',
+
+    // T-13 settings group
+    'settings.t13.help.title': 'T-13 tabel sarlavhasi',
+    'settings.t13.help.body1':
+      'Bu maydonlar eksport qilingan Excel faylining sarlavhasiga tushadi. Bo‘sh qoldirsangiz — qo‘l bilan imzo qo‘yish uchun chiziqlar bo‘ladi.',
+    'settings.t13.legalEntity': 'Yuridik shaxs (OOO/IP siz)',
+    'settings.t13.legalEntityPh': 'RADIKS',
+    'settings.t13.department': 'Bo‘lim',
+    'settings.t13.departmentPh': 'Ampul sexi',
+    'settings.t13.director': 'Yuridik shaxs direktori',
+    'settings.t13.directorPh': 'A.K.Qosimov',
+    'settings.t13.head': 'Bo‘lim rahbari',
+    'settings.t13.headPh': 'Sarımsoqov A.A.',
+    'settings.t13.docNumber': 'Hujjat raqami',
+    'settings.workHoursPerDay': 'Smenadagi ish soati',
 
     // assistant pick
     'assistantPick.title': 'Davomatni belgilash',
