@@ -23,14 +23,11 @@ const THIN: Partial<ExcelJS.Borders> = {
 const UND = '_______';
 
 // Cell value for a day in the T-13 grid:
-//   PRESENT / LATE  → hours worked that day (= workHoursPerDay)
+//   PRESENT / LATE  → 7
 //   ABSENT          → 0
 //   no record       → null (empty cell)
-function statusValue(
-  s: AttendanceStatus | undefined,
-  workHours: number,
-): number | null {
-  if (s === 'PRESENT' || s === 'LATE') return workHours;
+function statusValue(s: AttendanceStatus | undefined): number | null {
+  if (s === 'PRESENT' || s === 'LATE') return 7;
   if (s === 'ABSENT') return 0;
   return null;
 }
@@ -71,7 +68,6 @@ export async function generateTimesheetXlsx(
     days.push(c.toFormat('yyyy-LL-dd'));
   }
   const inPeriod = new Set(days.map((d) => Number(d.slice(-2))));
-  const workHours = org.workHoursPerDay ?? 8;
 
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Attendly';
@@ -157,18 +153,18 @@ export async function generateTimesheetXlsx(
     for (const iso of days) {
       const day = Number(iso.slice(-2));
       const cell = ws.getCell(r, 5 + (day - 1));
-      const value = statusValue(map.get(`${s.id}::${iso}`), workHours);
+      const value = statusValue(map.get(`${s.id}::${iso}`));
       cell.value = value;
       cell.alignment = { horizontal: 'center' };
       cell.font = FONT_CELL;
       cell.border = THIN;
-      if (value === workHours) presentCount++;
+      if (value === 7) presentCount++;
     }
     for (let d = 1; d <= 31; d++) {
       if (!inPeriod.has(d)) ws.getCell(r, 5 + (d - 1)).border = THIN;
     }
     ws.getCell(r, 36).value = presentCount;
-    ws.getCell(r, 37).value = presentCount * workHours;
+    ws.getCell(r, 37).value = presentCount * 7;
     for (const c of [2, 3, 4, 36, 37]) {
       ws.getCell(r, c).border = THIN;
       ws.getCell(r, c).alignment = {

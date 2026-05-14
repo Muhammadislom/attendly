@@ -481,7 +481,6 @@ function SettingsTab({
   const [director, setDirector] = useState(org.directorName ?? '');
   const [head, setHead] = useState(org.departmentHead ?? '');
   const [docNumber, setDocNumber] = useState(org.documentNumber ?? '');
-  const [workHours, setWorkHours] = useState(String(org.workHoursPerDay ?? 8));
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -489,10 +488,6 @@ function SettingsTab({
     const [eh, em] = endTime.split(':').map(Number);
     if (eh * 60 + em <= sh * 60 + sm) {
       return showAlert(t('manager.invalidWindow'));
-    }
-    const wh = Number(workHours);
-    if (!Number.isInteger(wh) || wh < 1 || wh > 24) {
-      return showAlert(t('settings.workHoursPerDay'));
     }
     setSaving(true);
     try {
@@ -509,7 +504,6 @@ function SettingsTab({
           directorName: director.trim() || null,
           departmentHead: head.trim() || null,
           documentNumber: docNumber.trim() || null,
-          workHoursPerDay: wh,
         }),
       });
       notify('success');
@@ -605,12 +599,6 @@ function SettingsTab({
           value={docNumber}
           onChange={(e) => setDocNumber(e.target.value)}
           hint={t('common.optional')}
-        />
-        <Input
-          label={t('settings.workHoursPerDay')}
-          type="number"
-          value={workHours}
-          onChange={(e) => setWorkHours(e.target.value)}
         />
         <Button onClick={save} disabled={saving} className="mb-2">
           {saving ? t('common.saving') : t('common.save')}

@@ -291,7 +291,7 @@ const dict = {
       'Период должен быть в пределах одного календарного месяца',
     'export.help.title': 'Что такое табель Т-13?',
     'export.help.body1':
-      'Унифицированная форма Т-13 — табель учёта рабочего времени. В ячейке за день: число — отработанные часы (например, 7), 0 — не пришёл, пусто — нет данных. Длительность смены задаётся в «Настройках» («Часов в смене»).',
+      'Унифицированная форма Т-13 — табель учёта рабочего времени. В ячейке за день: 7 — пришёл, 0 — не пришёл, пусто — нет данных.',
     'export.help.body2':
       'Файл уйдёт вам в личку бота. Шапку (директор, подразделение и т.п.) заполните во вкладке «Настройки» — иначе там будут подчёркивания для подписи от руки.',
 
@@ -630,7 +630,7 @@ const dict = {
     'export.errCrossMonth': 'Davr bitta kalendar oy ichida bo‘lishi kerak',
     'export.help.title': 'T-13 tabel nima?',
     'export.help.body1':
-      'T-13 — ish vaqtini hisobga olish tabeli. Hujayrada: son — ishlangan soatlar (masalan, 7), 0 — kelmagan, bo‘sh — ma’lumot yo‘q. Smena uzunligi «Sozlamalar» bo‘limida belgilanadi («Smenadagi ish soati»).',
+      'T-13 — ish vaqtini hisobga olish tabeli. Hujayrada: 7 — kelgan, 0 — kelmagan, bo‘sh — ma’lumot yo‘q.',
     'export.help.body2':
       'Fayl shaxsiy chatga keladi. Sarlavhani (direktor, bo‘lim va h.k.) «Sozlamalar» bo‘limida to‘ldiring — aks holda qo‘l bilan imzo qo‘yish uchun chiziqlar qoladi.',
 
